@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useGameStore } from '../game/store';
+import { AI_DIFFICULTY } from '../game/aiBrain';
 
 const CATEGORY_LABELS = {
   math: '🔢 数学',
@@ -13,6 +14,12 @@ const CATEGORY_LABELS = {
   animal: '🐾 动物',
 };
 
+const DIFFICULTY_OPTIONS = [
+  { key: AI_DIFFICULTY.EASY, label: '简单', color: 'bg-green-600' },
+  { key: AI_DIFFICULTY.NORMAL, label: '普通', color: 'bg-yellow-600' },
+  { key: AI_DIFFICULTY.HARD, label: '困难', color: 'bg-red-600' },
+];
+
 export default function SetupScreen() {
   const goToMenu = useGameStore(s => s.goToMenu);
   const setAgeTier = useGameStore(s => s.setAgeTier);
@@ -23,13 +30,32 @@ export default function SetupScreen() {
   // Default: 1 human + 1 AI
   const [humanCount, setHumanCount] = useState(1);
   const [aiCount, setAiCount] = useState(1);
+  const [aiDifficulties, setAiDifficulties] = useState([AI_DIFFICULTY.NORMAL]);
+
+  // Update AI difficulties when aiCount changes
+  const handleAiCountChange = (newCount) => {
+    setAiCount(newCount);
+    // Extend or truncate difficulties array
+    const newDifficulties = [...aiDifficulties];
+    while (newDifficulties.length < newCount) {
+      newDifficulties.push(AI_DIFFICULTY.NORMAL);
+    }
+    setAiDifficulties(newDifficulties.slice(0, newCount));
+  };
+
+  // Update individual AI difficulty
+  const handleDifficultyChange = (aiIndex, difficulty) => {
+    const newDifficulties = [...aiDifficulties];
+    newDifficulties[aiIndex] = difficulty;
+    setAiDifficulties(newDifficulties);
+  };
 
   const handleStart = () => {
     if (humanCount + aiCount < 2) {
       alert('至少需要2名玩家！');
       return;
     }
-    setPlayers(humanCount, aiCount);
+    setPlayers(humanCount, aiCount, aiDifficulties);
   };
 
   return (
@@ -105,12 +131,12 @@ export default function SetupScreen() {
             <div className="text-sm text-gray-400 mb-2">电脑玩家</div>
             <div className="flex items-center gap-2 justify-center">
               <button
-                onClick={() => setAiCount(Math.max(0, aiCount - 1))}
+                onClick={() => handleAiCountChange(Math.max(0, aiCount - 1))}
                 className="w-10 h-10 bg-gray-700 rounded-full font-bold hover:bg-gray-600"
               >-</button>
               <span className="text-2xl font-bold w-8 text-center">{aiCount}</span>
               <button
-                onClick={() => setAiCount(Math.min(4 - humanCount, aiCount + 1))}
+                onClick={() => handleAiCountChange(Math.min(4 - humanCount, aiCount + 1))}
                 className="w-10 h-10 bg-gray-700 rounded-full font-bold hover:bg-gray-600"
               >+</button>
             </div>
@@ -124,6 +150,35 @@ export default function SetupScreen() {
           </span>
         </div>
       </div>
+
+      {/* AI Difficulty Selection */}
+      {aiCount > 0 && (
+        <div className="mb-8 w-96">
+          <h3 className="text-xl mb-4 text-purple-200">AI 难度设置</h3>
+          <div className="bg-gray-800/50 rounded-xl p-4 space-y-3">
+            {Array.from({ length: aiCount }, (_, i) => (
+              <div key={i} className="flex items-center justify-between">
+                <span className="text-white">🤖 AI {i + 1}</span>
+                <div className="flex gap-2">
+                  {DIFFICULTY_OPTIONS.map(opt => (
+                    <button
+                      key={opt.key}
+                      onClick={() => handleDifficultyChange(i, opt.key)}
+                      className={`px-3 py-1 rounded-lg text-sm font-bold transition-all ${
+                        aiDifficulties[i] === opt.key
+                          ? `${opt.color} text-white ring-2 ring-white/50`
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Action Buttons */}
       <div className="flex gap-4">

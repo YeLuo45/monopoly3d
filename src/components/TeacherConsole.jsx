@@ -25,6 +25,8 @@ export default function TeacherConsole() {
   const toggleTeacherMode = useGameStore(s => s.toggleTeacherMode);
   const timerEnabled = useGameStore(s => s.timerEnabled);
   const toggleTimer = useGameStore(s => s.toggleTimer);
+  const aiThinkingDelayEnabled = useGameStore(s => s.aiThinkingDelayEnabled);
+  const toggleAiThinkingDelay = useGameStore(s => s.toggleAiThinkingDelay);
   const players = useGameStore(s => s.players);
   const saveGame = useGameStore(s => s.saveGame);
   const goToMenu = useGameStore(s => s.goToMenu);
@@ -106,6 +108,18 @@ export default function TeacherConsole() {
             } text-white`}
           >
             {timerEnabled ? '开启' : '关闭'}
+          </button>
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <span className="text-gray-300 text-sm">AI 思考延迟</span>
+          <button
+            onClick={toggleAiThinkingDelay}
+            className={`px-3 py-1 rounded-lg text-sm font-bold ${
+              aiThinkingDelayEnabled ? 'bg-green-600' : 'bg-gray-600'
+            } text-white`}
+          >
+            {aiThinkingDelayEnabled ? '开启' : '关闭'}
           </button>
         </div>
         

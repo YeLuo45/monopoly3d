@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { BOARD_CONFIG, BOARD_SIZE, STARTING_MONEY, MAX_ROUNDS, QUESTION_TILE_IDS, TILE_TYPES } from './boardConfig';
 import { rollDice, getDiceResult } from './dice';
+import { AI_DIFFICULTY, chooseAIAction } from './aiBrain';
 
 const PLAYER_COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'];
 const AI_NAMES = ['小智', '小慧', '小能'];
@@ -43,6 +44,7 @@ const initialState = {
   ageTier: 'kindergarten', // kindergarten | primary1_2 | primary3_4
   humanCount: 2,
   aiCount: 0,
+  aiDifficulties: [], // array of AI difficulty levels per AI
 
   // Players
   players: [],
@@ -67,6 +69,7 @@ const initialState = {
   // Teacher mode
   teacherMode: false,
   timerEnabled: true,
+  aiThinkingDelayEnabled: true, // AI thinking delay toggle
 
   // Question bank management
   enabledCategories: ['math', 'shape', 'time', 'geography', 'science', 'reading', 'life', 'emotion', 'animal'], // which categories are enabled for gameplay
@@ -89,10 +92,22 @@ export const useGameStore = create((set, get) => ({
 
   setAgeTier: (tier) => set({ ageTier: tier }),
 
-  setPlayers: (humanCount, aiCount) => {
+  setPlayers: (humanCount, aiCount, aiDifficulties = []) => {
+    // Default difficulties to 'normal' if not provided
+    const difficulties = aiDifficulties.length === aiCount 
+      ? aiDifficulties 
+      : Array(aiCount).fill(AI_DIFFICULTY.NORMAL);
     // Transition to piece selection screen
-    set({ humanCount, aiCount, screen: 'piece_selection' });
+    set({ humanCount, aiCount, aiDifficulties: difficulties, screen: 'piece_selection' });
   },
+
+  setAIDifficulty: (aiIndex, difficulty) => set(s => {
+    const newDifficulties = [...s.aiDifficulties];
+    newDifficulties[aiIndex] = difficulty;
+    return { aiDifficulties: newDifficulties };
+  }),
+
+  toggleAiThinkingDelay: () => set(s => ({ aiThinkingDelayEnabled: !s.aiThinkingDelayEnabled })),
 
   setPieceSelection: (pieceMap) => {
     const state = get();
@@ -523,14 +538,41 @@ toggleTeacherMode: () => set(s => ({ teacherMode: !s.teacherMode })),
     return state.players[next];
   },
   
-  // AI turn
+  // AI turn - uses aiBrain for strategic decisions
   aiTurn: () => {
     const state = get();
     const currentPlayer = state.players[state.currentPlayerIndex];
     if (!currentPlayer.isAI) return;
     
-    // AI automatically rolls
-    setTimeout(() => get().rollDice(), 1000);
+    // Get AI difficulty
+    const aiIndex = currentPlayer.id - state.humanCount;
+    const difficulty = state.aiDifficulties[aiIndex] || AI_DIFFICULTY.NORMAL;
+    
+    // Show thinking state if delay is enabled
+    if (state.aiThinkingDelayEnabled) {
+      set({ aiThinking: true });
+    }
+    
+    // Calculate delay (0.5-1s if enabled, otherwise instant)
+    const delay = state.aiThinkingDelayEnabled ? 500 + Math.random() * 500 : 50;
+    
+    setTimeout(() => {
+      // After dice roll, use aiBrain to decide buy/build/pass
+      if (state.phase === 'buy_property') {
+        const action = chooseAIAction(get(), state.currentPlayerIndex, difficulty);
+        set({ aiThinking: false });
+        
+        if (action.action === 'buy') {
+          get().buyProperty();
+        } else {
+          get().passProperty();
+        }
+      } else {
+        // AI automatically rolls dice
+        set({ aiThinking: false });
+        get().rollDice();
+      }
+    }, delay);
   },
   
   saveGame: () => {
