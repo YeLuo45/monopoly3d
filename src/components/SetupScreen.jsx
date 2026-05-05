@@ -1,11 +1,24 @@
 import { useState } from 'react';
 import { useGameStore } from '../game/store';
 
+const CATEGORY_LABELS = {
+  math: '🔢 数学',
+  shape: '⬡ 形状',
+  time: '⏰ 时间',
+  geography: '🌍 地理',
+  science: '🔬 科学',
+  reading: '📖 阅读',
+  life: '🌱 生活',
+  emotion: '💝 情感',
+  animal: '🐾 动物',
+};
+
 export default function SetupScreen() {
   const goToMenu = useGameStore(s => s.goToMenu);
   const setAgeTier = useGameStore(s => s.setAgeTier);
   const setPlayers = useGameStore(s => s.setPlayers);
   const ageTier = useGameStore(s => s.ageTier);
+  const enabledCategories = useGameStore(s => s.enabledCategories);
 
   // Default: 1 human + 1 AI
   const [humanCount, setHumanCount] = useState(1);
@@ -45,6 +58,26 @@ export default function SetupScreen() {
               <div className="text-sm text-purple-200">{opt.desc}</div>
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Enabled Categories Display */}
+      <div className="mb-8 w-96">
+        <h3 className="text-xl mb-4 text-purple-200">已启用题目类别</h3>
+        <div className="bg-gray-800/50 rounded-xl p-4">
+          <div className="flex flex-wrap gap-2">
+            {enabledCategories.map(cat => (
+              <span
+                key={cat}
+                className="px-2 py-1 bg-purple-600/50 rounded-full text-sm"
+              >
+                {CATEGORY_LABELS[cat] || cat}
+              </span>
+            ))}
+          </div>
+          <div className="text-sm text-gray-400 mt-2">
+            共 {enabledCategories.length} 个类别已启用
+          </div>
         </div>
       </div>
 

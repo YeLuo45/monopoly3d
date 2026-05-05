@@ -11,6 +11,8 @@ export default function QuestionModal() {
   const ageTier = useGameStore(s => s.ageTier);
   const timerEnabled = useGameStore(s => s.timerEnabled);
   
+  const [imageError, setImageError] = useState(false);
+  
   const currentPlayer = players[currentPlayerIndex];
   
   // TTS for kindergarten
@@ -23,10 +25,30 @@ export default function QuestionModal() {
     }
   }, [currentQuestion, ageTier]);
   
+  // Reset image error when question changes
+  useEffect(() => {
+    setImageError(false);
+  }, [currentQuestion]);
+  
   if (!currentQuestion) return null;
   
   const timerPercent = (questionTimer / 15) * 100;
   const timerColor = questionTimer > 10 ? 'bg-green-500' : questionTimer > 5 ? 'bg-yellow-500' : 'bg-red-500';
+  
+  // Category display mapping
+  const categoryLabels = {
+    math: '🔢 数学',
+    shape: '⬡ 形状',
+    time: '⏰ 时间',
+    geography: '🌍 地理',
+    science: '🔬 科学',
+    reading: '📖 阅读',
+    life: '🌱 生活',
+    emotion: '💝 情感',
+    animal: '🐾 动物',
+  };
+  
+  const categoryLabel = categoryLabels[currentQuestion.category] || '📚 问题';
   
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm z-50">
@@ -56,15 +78,25 @@ export default function QuestionModal() {
         </div>
         
         {/* Question */}
-        <div className="bg-slate-700/50 rounded-2xl p-6 mb-6">
+        <div className="bg-slate-700/50 rounded-2xl p-6 mb-4">
           <div className="text-yellow-300 text-xs uppercase tracking-wider mb-2">
-            {currentQuestion.subject === 'math' ? '🔢 数学' :
-             currentQuestion.subject === 'science' ? '🔬 科学' :
-             currentQuestion.subject === 'general' ? '🌍 常识' : '📚 问题'}
+            {categoryLabel}
           </div>
           <div className="text-white text-2xl font-bold leading-relaxed">
             {currentQuestion.question}
           </div>
+          
+          {/* Image display */}
+          {currentQuestion.imageUrl && !imageError && (
+            <div className="mt-4 flex justify-center">
+              <img
+                src={currentQuestion.imageUrl}
+                alt="题目配图"
+                className="max-h-[200px] rounded-lg object-contain"
+                onError={() => setImageError(true)}
+              />
+            </div>
+          )}
         </div>
         
         {/* Options */}
