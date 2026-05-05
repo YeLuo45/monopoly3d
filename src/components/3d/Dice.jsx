@@ -46,9 +46,18 @@ function Die({ position, value, rolling }) {
   const meshRef = useRef();
   const targetRotation = useRef({ x: 0, y: 0 });
   const prevRolling = useRef(rolling);
+  const bounceY = useRef(0);
+  const bounceVel = useRef(0);
+  const rollStartTime = useRef(0);
+  const ROLL_DURATION = 1.2; // 1.2 seconds ease-out rolling
 
   useEffect(() => {
-    // When rolling stops, snap to final face immediately
+    if (rolling && !prevRolling.current) {
+      // Start of rolling - reset bounce
+      rollStartTime.current = Date.now();
+      bounceVel.current = 0.3;
+    }
+    // When rolling stops, start bounce-out settle
     if (prevRolling.current && !rolling) {
       const faceRotations = {
         1: [0, 0],
@@ -64,6 +73,8 @@ function Die({ position, value, rolling }) {
         meshRef.current.rotation.y = ry;
       }
       targetRotation.current = { x: rx, y: ry };
+      // Trigger bounce on landing
+      bounceVel.current = 0.25;
     }
     prevRolling.current = rolling;
   }, [rolling, value]);
@@ -71,11 +82,35 @@ function Die({ position, value, rolling }) {
   useFrame((_, delta) => {
     if (!meshRef.current) return;
 
+    // Bounce physics for landing
+    if (bounceVel.current !== 0) {
+      bounceY.current += bounceVel.current;
+      bounceVel.current -= delta * 2.5; // gravity
+      if (bounceY.current <= 0) {
+        bounceY.current = 0;
+        bounceVel.current *= -0.4; // bounce damping
+        if (Math.abs(bounceVel.current) < 0.02) {
+          bounceVel.current = 0;
+        }
+      }
+      meshRef.current.position.y = bounceY.current;
+    }
+
     if (rolling) {
-      // Tumbling animation with slight bounce
-      meshRef.current.rotation.x += delta * 18;
-      meshRef.current.rotation.y += delta * 14;
-      meshRef.current.rotation.z += delta * 6;
+      // Calculate progress through roll duration
+      const elapsed = (Date.now() - rollStartTime.current) / 1000;
+      const progress = Math.min(elapsed / ROLL_DURATION, 1);
+      // Ease-out deceleration: fast start, slow end
+      const easeFactor = 1 - Math.pow(1 - progress, 3);
+      
+      // Tumbling animation with deceleration
+      meshRef.current.rotation.x += delta * 18 * (1 - easeFactor * 0.7);
+      meshRef.current.rotation.y += delta * 14 * (1 - easeFactor * 0.7);
+      meshRef.current.rotation.z += delta * 6 * (1 - easeFactor * 0.7);
+      
+      // Shadow intensity changes during roll
+      const shadowPulse = 0.5 + Math.sin(elapsed * 20) * 0.3;
+      meshRef.current.castShadow = true;
     } else {
       // Smooth snap to target face
       meshRef.current.rotation.x += (targetRotation.current.x - meshRef.current.rotation.x) * 0.15;

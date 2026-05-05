@@ -387,7 +387,10 @@ function PlayerToken({ player, isCurrentPlayer, position, offsetX, offsetZ, piec
   const toPos = useRef(new THREE.Vector3(position[0], position[1] + 0.55, position[2]));
   const stepStartTime = useRef(0);
   const lastStep = useRef(-1);
-  const STEP_DURATION = 0.4; // seconds per tile — must match MoveAnimator
+  const STEP_DURATION = 0.3; // seconds per tile — faster movement
+  const swayPhase = useRef(Math.random() * Math.PI * 2); // random sway offset
+  const arriveTime = useRef(0); // tracks arrival for vibration
+  const justArrived = useRef(false);
 
   useFrame(({ clock }) => {
     if (!meshRef.current) return;
@@ -400,6 +403,7 @@ function PlayerToken({ player, isCurrentPlayer, position, offsetX, offsetZ, piec
     if (isMoving && animationStep !== lastStep.current) {
       lastStep.current = animationStep;
       stepStartTime.current = clock.elapsedTime;
+      swayPhase.current += 0.5; // shift sway phase each step
 
       // Determine from/to positions
       const currentIdx = Math.max(0, animationStep - 1);
@@ -423,17 +427,36 @@ function PlayerToken({ player, isCurrentPlayer, position, offsetX, offsetZ, piec
       const lerpedZ = THREE.MathUtils.lerp(fromPos.current.z, toPos.current.z, eased);
       const lerpedY = THREE.MathUtils.lerp(fromPos.current.y, toPos.current.y, eased);
 
+      // Sway left-right during movement
+      const sway = Math.sin(clock.elapsedTime * 12 + swayPhase.current) * 0.04 * (1 - eased);
+
       meshRef.current.position.set(
-        lerpedX + offsetX,
+        lerpedX + offsetX + sway,
         lerpedY,
         lerpedZ + offsetZ
       );
+      justArrived.current = false;
     } else {
+      // Arrival vibration effect
+      if (!justArrived.current && lastStep.current >= 0 && phase !== 'moving') {
+        justArrived.current = true;
+        arriveTime.current = clock.elapsedTime;
+      }
+      
+      let vibY = 0;
+      if (justArrived.current) {
+        const vibElapsed = clock.elapsedTime - arriveTime.current;
+        if (vibElapsed < 0.3) {
+          // Quick vibration that decays
+          vibY = Math.sin(vibElapsed * 60) * 0.03 * (1 - vibElapsed / 0.3);
+        }
+      }
+      
       // Snap to tile position with idle bob
       const bob = Math.sin(clock.elapsedTime * 3 + bobPhase) * 0.06;
       meshRef.current.position.set(
         position[0] + offsetX,
-        position[1] + 0.55 + bob,
+        position[1] + 0.55 + bob + vibY,
         position[2] + offsetZ
       );
     }

@@ -211,7 +211,7 @@ function TileMesh({ tile, position, index }) {
         </Text>
       )}
 
-      {/* Tile label */}
+      {/* Tile label with shadow outline for readability */}
       <Text
         position={[0, 0.42, 0]}
         rotation={[-Math.PI / 6, 0, 0]}
@@ -221,8 +221,12 @@ function TileMesh({ tile, position, index }) {
         anchorY="middle"
         maxWidth={1.3}
         fontWeight="bold"
-        outlineWidth={0.015}
+        outlineWidth={0.025}
         outlineColor="#ffffff"
+        shadowOffsetX={0.02}
+        shadowOffsetY={-0.02}
+        shadowColor="#000000"
+        shadowBlur={0.1}
       >
         {tile.name}
       </Text>
@@ -289,25 +293,35 @@ function TileMesh({ tile, position, index }) {
 }
 
 function BoardBase() {
+  // Procedural wood-grain base using color variation
+  const woodColor = '#B45309';
   return (
     <group>
       {/* Outer wooden border */}
       <mesh position={[0, -0.05, 0]} receiveShadow>
         <boxGeometry args={[32, 0.5, 32]} />
-        <meshStandardMaterial color="#D97706" roughness={0.6} metalness={0.05} />
+        <meshStandardMaterial color={woodColor} roughness={0.65} metalness={0.05} />
       </mesh>
 
-      {/* Border trim */}
+      {/* Border trim with darker wood */}
       <mesh position={[0, 0.18, 0]}>
         <boxGeometry args={[30, 0.1, 30]} />
-        <meshStandardMaterial color="#B45309" roughness={0.5} />
+        <meshStandardMaterial color="#92400E" roughness={0.6} />
       </mesh>
 
-      {/* Inner bright green felt */}
+      {/* Inner playing surface - felt green but warmer */}
       <mesh position={[0, 0.22, 0]} receiveShadow>
         <boxGeometry args={[27, 0.12, 27]} />
-        <meshStandardMaterial color="#22C55E" roughness={0.7} metalness={0.0} />
+        <meshStandardMaterial color="#16A34A" roughness={0.65} metalness={0.0} />
       </mesh>
+
+      {/* Subtle wood grain lines on border */}
+      {[-14, -12, -10, -8, -6, -4, 4, 6, 8, 10, 12, 14].map((offset, i) => (
+        <mesh key={`wood-${i}`} position={[offset, 0.2, 0]} rotation={[0, 0, 0]}>
+          <boxGeometry args={[0.03, 0.02, 31]} />
+          <meshStandardMaterial color="#78350F" roughness={0.9} />
+        </mesh>
+      ))}
 
       {/* Grid pattern */}
       {[-10, -5, 0, 5, 10].map((offset) => (

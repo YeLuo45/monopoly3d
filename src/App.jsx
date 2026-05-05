@@ -5,6 +5,7 @@ import PieceSelectionScreen from './components/PieceSelectionScreen';
 import GameBoard from './components/GameBoard';
 import GameOverScreen from './components/GameOverScreen';
 import TeacherConsole from './components/TeacherConsole';
+import FloatingEffects from './components/FloatingEffects';
 import './index.css';
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
       {screen === 'playing' && (
         <>
           <GameBoard />
+          <FloatingEffects />
           <TeacherConsole />
         </>
       )}

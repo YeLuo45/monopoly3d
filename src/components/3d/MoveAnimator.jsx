@@ -21,7 +21,7 @@ export default function MoveAnimator() {
     // Only advance if we haven't finished
     if (animationStep >= movingPath.length) return;
     
-    const STEP_DURATION = 0.4; // seconds per tile
+    const STEP_DURATION = 0.3; // seconds per tile
     if (clock.elapsedTime - lastStepTime.current >= STEP_DURATION) {
       lastStepTime.current = clock.elapsedTime;
       advanceStep();

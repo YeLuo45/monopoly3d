@@ -115,7 +115,7 @@ export const useGameStore = create((set, get) => ({
     
     set({ diceRolling: true });
     
-    // Animate dice for 1 second
+    // Animate dice for 1.2 seconds with ease-out
     const animInterval = setInterval(() => {
       set({ diceValues: [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1] });
     }, 100);
