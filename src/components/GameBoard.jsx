@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { useGameStore } from '../game/store';
+import { BOARD_THEMES } from '../game/themes';
 import Board from './3d/Board';
 import Dice from './3d/Dice';
 import Players from './3d/Players';
@@ -77,19 +78,21 @@ export default function GameBoard() {
   const currentQuestion = useGameStore(s => s.currentQuestion);
   const players = useGameStore(s => s.players);
   const currentPlayerIndex = useGameStore(s => s.currentPlayerIndex);
+  const currentTheme = useGameStore(s => s.currentTheme);
+  const theme = BOARD_THEMES[currentTheme] || BOARD_THEMES.classic;
   
   return (
     <div className="relative w-full h-full">
       {/* 3D Canvas */}
       <Canvas camera={{ position: [0, 18, 14], fov: 45 }} shadows>
-        {/* Brighter ambient — cartoon style needs well-lit scene */}
-        <ambientLight intensity={1.2} color="#fff8f0" />
+        {/* Theme-based ambient light */}
+        <ambientLight intensity={theme.ambientIntensity} color={theme.ambientColor} />
         
         {/* Warm sunlight from upper right */}
         <directionalLight
           position={[12, 22, 10]}
-          intensity={1.8}
-          color="#fff5e0"
+          intensity={theme.directionalIntensity}
+          color={theme.directionalColor}
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
@@ -101,10 +104,10 @@ export default function GameBoard() {
         />
         
         {/* Soft fill light from left — cool blue tint */}
-        <pointLight position={[-12, 12, -8]} intensity={0.6} color="#a0d8ef" />
+        <pointLight position={[-12, 12, -8]} intensity={theme.fillLightIntensity} color={theme.fillLightColor} />
         
         {/* Warm fill from below-front — gives nice cartoon bounce */}
-        <pointLight position={[0, 4, 14]} intensity={0.4} color="#ffe4b5" />
+        <pointLight position={[0, 4, 14]} intensity={theme.warmFillIntensity} color={theme.warmFillColor} />
         
         <Board />
         <Players />

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useGameStore } from '../game/store';
 import { BOARD_CONFIG } from '../game/boardConfig';
+import { playSound } from '../game/audio';
 
 // Floating text that animates upward and fades
 export function FloatingText({ text, color, position, onComplete }) {
@@ -63,6 +64,8 @@ export function PurchaseOverlay() {
           if (tile) {
             const id = Date.now();
             setPurchases(p => [...p, { id, name: tile.name, color: currentPlayer.color }]);
+            // Play purchase sound
+            playSound('purchase');
             setTimeout(() => {
               setPurchases(p => p.filter(x => x.id !== id));
             }, 1500);
@@ -109,6 +112,8 @@ export function QuestionFeedback() {
     if (questionAnswered) {
       setFeedback(questionAnswered);
       setShow(true);
+      // Play sound based on result
+      playSound(questionAnswered === 'correct' ? 'correct' : 'wrong');
       const timer = setTimeout(() => setShow(false), 1500);
       return () => clearTimeout(timer);
     }

@@ -1,6 +1,8 @@
 import { useRef, useMemo } from 'react';
 import { Text, RoundedBox, Cylinder } from '@react-three/drei';
 import { BOARD_CONFIG, BOARD_SIZE, TILE_TYPES } from '../../game/boardConfig';
+import { BOARD_THEMES } from '../../game/themes';
+import { useGameStore } from '../../game/store';
 import * as THREE from 'three';
 
 // 36 tiles on a rounded-square loop: 9 per side
@@ -29,17 +31,7 @@ function getTilePosition(index) {
   }
 }
 
-// Vibrant color palette for buildings
-const BUILDING_COLORS = [
-  '#FF6B6B', '#FF8C00', '#FFD700', '#22C55E',
-  '#3B82F6', '#8B5CF6', '#EC4899', '#F97316',
-  '#06B6D4', '#84CC16', '#E11D48', '#7C3AED',
-];
-const ROOF_COLORS = [
-  '#DC2626', '#B45309', '#D97706', '#15803D',
-  '#1D4ED8', '#6D28D9', '#BE185D', '#C2410C',
-  '#0891B2', '#4D7C0F', '#9F1239', '#5B21B6',
-];
+// Vibrant color palette for buildings - now using theme-based colors
 
 function CartoonBuilding({ color, roofColor, index }) {
   // Vary building shapes based on index
@@ -153,7 +145,7 @@ function CartoonHotel({ color }) {
   );
 }
 
-function TileMesh({ tile, position, index }) {
+function TileMesh({ tile, position, index, theme }) {
   const isQuestionTile = tile.type === TILE_TYPES.QUESTION;
   const isChanceTile = tile.type === TILE_TYPES.CHANCE;
   const isTaxTile = tile.type === TILE_TYPES.TAX;
@@ -161,30 +153,30 @@ function TileMesh({ tile, position, index }) {
 
   const tileColor = useMemo(() => {
     if (tile.type === TILE_TYPES.PROPERTY) return tile.color || '#94A3B8';
-    if (isQuestionTile) return '#10B981';
-    if (isChanceTile) return '#F59E0B';
-    if (isTaxTile) return '#EF4444';
-    if (tile.subtype === 'GO') return '#22C55E';
-    if (tile.subtype === 'JAIL') return '#F97316';
-    if (tile.subtype === 'FREE_PARKING') return '#3B82F6';
-    if (tile.subtype === 'GO_TO_JAIL') return '#DC2626';
+    if (isQuestionTile) return theme.questionColor;
+    if (isChanceTile) return theme.chanceColor;
+    if (isTaxTile) return theme.taxColor;
+    if (tile.subtype === 'GO') return theme.goColor;
+    if (tile.subtype === 'JAIL') return theme.jailColor;
+    if (tile.subtype === 'FREE_PARKING') return theme.freeParkingColor;
+    if (tile.subtype === 'GO_TO_JAIL') return theme.goToJailColor;
     return '#6B7280';
   }, [tile, isQuestionTile, isChanceTile, isTaxTile]);
 
-  const buildingColor = BUILDING_COLORS[index % BUILDING_COLORS.length];
-  const roofColor = ROOF_COLORS[index % ROOF_COLORS.length];
+  const buildingColor = theme.buildingColors[index % theme.buildingColors.length];
+  const roofColor = theme.roofColors[index % theme.roofColors.length];
 
   return (
     <group position={position}>
       {/* Tile base */}
       <RoundedBox args={[1.6, 0.35, 1.6]} radius={0.1} position={[0, 0, 0]} castShadow receiveShadow>
-        <meshStandardMaterial color={tileColor} roughness={0.5} metalness={0.05} />
+        <meshStandardMaterial color={theme.tileSideColor} roughness={0.5} metalness={0.05} />
       </RoundedBox>
 
       {/* Tile top surface */}
       <mesh position={[0, 0.19, 0]} receiveShadow>
         <boxGeometry args={[1.4, 0.06, 1.4]} />
-        <meshStandardMaterial color="#FFFBEB" roughness={0.6} />
+        <meshStandardMaterial color={theme.tileBaseColor} roughness={0.6} />
       </mesh>
 
       {/* Color stripe for properties */}
@@ -216,13 +208,13 @@ function TileMesh({ tile, position, index }) {
         position={[0, 0.42, 0]}
         rotation={[-Math.PI / 6, 0, 0]}
         fontSize={0.18}
-        color="#0f172a"
+        color={theme.labelStyle.textColor}
         anchorX="center"
         anchorY="middle"
         maxWidth={1.3}
         fontWeight="bold"
         outlineWidth={0.025}
-        outlineColor="#ffffff"
+        outlineColor={theme.labelStyle.outlineColor}
         shadowOffsetX={0.02}
         shadowOffsetY={-0.02}
         shadowColor="#000000"
@@ -292,34 +284,33 @@ function TileMesh({ tile, position, index }) {
   );
 }
 
-function BoardBase() {
-  // Procedural wood-grain base using color variation
-  const woodColor = '#B45309';
+function BoardBase({ theme }) {
+  // Procedural wood-grain base using theme colors
   return (
     <group>
       {/* Outer wooden border */}
       <mesh position={[0, -0.05, 0]} receiveShadow>
         <boxGeometry args={[32, 0.5, 32]} />
-        <meshStandardMaterial color={woodColor} roughness={0.65} metalness={0.05} />
+        <meshStandardMaterial color={theme.boardColor} roughness={0.65} metalness={0.05} />
       </mesh>
 
       {/* Border trim with darker wood */}
       <mesh position={[0, 0.18, 0]}>
         <boxGeometry args={[30, 0.1, 30]} />
-        <meshStandardMaterial color="#92400E" roughness={0.6} />
+        <meshStandardMaterial color={theme.boardBorderColor} roughness={0.6} />
       </mesh>
 
       {/* Inner playing surface - felt green but warmer */}
       <mesh position={[0, 0.22, 0]} receiveShadow>
         <boxGeometry args={[27, 0.12, 27]} />
-        <meshStandardMaterial color="#16A34A" roughness={0.65} metalness={0.0} />
+        <meshStandardMaterial color={theme.feltColor} roughness={0.65} metalness={0.0} />
       </mesh>
 
       {/* Subtle wood grain lines on border */}
       {[-14, -12, -10, -8, -6, -4, 4, 6, 8, 10, 12, 14].map((offset, i) => (
         <mesh key={`wood-${i}`} position={[offset, 0.2, 0]} rotation={[0, 0, 0]}>
           <boxGeometry args={[0.03, 0.02, 31]} />
-          <meshStandardMaterial color="#78350F" roughness={0.9} />
+          <meshStandardMaterial color={theme.boardBorderColor} roughness={0.9} />
         </mesh>
       ))}
 
@@ -328,11 +319,11 @@ function BoardBase() {
         <group key={`grid-${offset}`}>
           <mesh position={[offset, 0.285, 0]} receiveShadow>
             <boxGeometry args={[0.04, 0.01, 27]} />
-            <meshStandardMaterial color="#4ADE80" roughness={0.8} />
+            <meshStandardMaterial color={theme.gridColor} roughness={0.8} />
           </mesh>
           <mesh position={[0, 0.285, offset]} receiveShadow>
             <boxGeometry args={[27, 0.01, 0.04]} />
-            <meshStandardMaterial color="#4ADE80" roughness={0.8} />
+            <meshStandardMaterial color={theme.gridColor} roughness={0.8} />
           </mesh>
         </group>
       ))}
@@ -342,7 +333,7 @@ function BoardBase() {
         <mesh key={i} position={[x, 0.28, z]}>
           <cylinderGeometry args={[0.8, 0.8, 0.05, 16]} />
           <meshStandardMaterial
-            color={['#FF6B6B', '#F59E0B', '#3B82F6', '#10B981'][i]}
+            color={theme.cornerColors[i]}
             roughness={0.3} metalness={0.2}
           />
         </mesh>
@@ -352,13 +343,13 @@ function BoardBase() {
       <group position={[0, 0.32, 0]}>
         <mesh>
           <cylinderGeometry args={[3, 3.2, 0.3, 8]} />
-          <meshStandardMaterial color="#7C3AED" roughness={0.4} metalness={0.1} />
+          <meshStandardMaterial color={theme.centerColor} roughness={0.4} metalness={0.1} />
         </mesh>
         <mesh position={[0, 0.2, 0]}>
           <cylinderGeometry args={[2.8, 2.8, 0.1, 8]} />
-          <meshStandardMaterial color="#A78BFA" roughness={0.3} metalness={0.15} />
+          <meshStandardMaterial color={theme.centerAccentColor} roughness={0.3} metalness={0.15} />
         </mesh>
-        <Text position={[0, 0.5, 0]} fontSize={0.6} color="#FEF08A" anchorX="center" anchorY="middle" fontWeight="bold">
+        <Text position={[0, 0.5, 0]} fontSize={0.6} color={theme.textColor} anchorX="center" anchorY="middle" fontWeight="bold">
           🎲 MONOPOLY 🎲
         </Text>
         {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -373,11 +364,14 @@ function BoardBase() {
 }
 
 export default function Board() {
+  const currentTheme = useGameStore(s => s.currentTheme);
+  const theme = BOARD_THEMES[currentTheme] || BOARD_THEMES.classic;
+
   return (
     <group>
-      <BoardBase />
+      <BoardBase theme={theme} />
       {BOARD_CONFIG.map((tile, i) => (
-        <TileMesh key={tile.id} tile={tile} index={i} position={getTilePosition(i)} />
+        <TileMesh key={tile.id} tile={tile} index={i} position={getTilePosition(i)} theme={theme} />
       ))}
     </group>
   );

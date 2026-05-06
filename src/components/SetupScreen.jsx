@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useGameStore } from '../game/store';
 import { AI_DIFFICULTY } from '../game/aiBrain';
+import { THEMES, BOARD_THEMES } from '../game/themes';
 
 const CATEGORY_LABELS = {
   math: '🔢 数学',
@@ -26,6 +27,8 @@ export default function SetupScreen() {
   const setPlayers = useGameStore(s => s.setPlayers);
   const ageTier = useGameStore(s => s.ageTier);
   const enabledCategories = useGameStore(s => s.enabledCategories);
+  const currentTheme = useGameStore(s => s.currentTheme);
+  const setTheme = useGameStore(s => s.setTheme);
 
   // Default: 1 human + 1 AI
   const [humanCount, setHumanCount] = useState(1);
@@ -179,6 +182,32 @@ export default function SetupScreen() {
           </div>
         </div>
       )}
+
+      {/* Theme Selection */}
+      <div className="mb-8 w-96">
+        <h3 className="text-xl mb-4 text-purple-200">🎨 棋盘主题</h3>
+        <div className="grid grid-cols-2 gap-3">
+          {Object.entries(BOARD_THEMES).map(([key, theme]) => (
+            <button
+              key={key}
+              onClick={() => setTheme(key)}
+              className={`p-4 rounded-xl text-left transition-all ${
+                currentTheme === key
+                  ? 'bg-purple-600 ring-2 ring-purple-300'
+                  : 'bg-gray-800/50 hover:bg-gray-700/50'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-6 h-6 rounded-full" style={{ background: theme.boardColor }} />
+                <div className="w-6 h-6 rounded-full" style={{ background: theme.feltColor }} />
+                <div className="w-6 h-6 rounded-full" style={{ background: theme.centerColor }} />
+              </div>
+              <div className="font-bold text-white">{theme.name}</div>
+              <div className="text-xs text-gray-400">{theme.description}</div>
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Action Buttons */}
       <div className="flex gap-4">

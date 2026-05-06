@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { BOARD_CONFIG, BOARD_SIZE, STARTING_MONEY, MAX_ROUNDS, QUESTION_TILE_IDS, TILE_TYPES } from './boardConfig';
 import { rollDice, getDiceResult } from './dice';
 import { AI_DIFFICULTY, chooseAIAction } from './aiBrain';
+import { THEMES } from './themes';
 
 const PLAYER_COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'];
 const AI_NAMES = ['小智', '小慧', '小能'];
@@ -80,13 +81,16 @@ const initialState = {
 
   // Piece selection (maps player index -> piece id)
   pieceSelections: {},
+
+  // Theme
+  currentTheme: THEMES.CLASSIC,
 };
 
 export const useGameStore = create((set, get) => ({
   ...initialState,
 
   // Navigation
-  goToMenu: () => set({ ...initialState }),
+  goToMenu: () => set({ ...initialState, currentTheme: get().currentTheme }),
 
   goToSetup: () => set({ screen: 'setup' }),
 
@@ -108,6 +112,8 @@ export const useGameStore = create((set, get) => ({
   }),
 
   toggleAiThinkingDelay: () => set(s => ({ aiThinkingDelayEnabled: !s.aiThinkingDelayEnabled })),
+
+  setTheme: (theme) => set({ currentTheme: theme }),
 
   setPieceSelection: (pieceMap) => {
     const state = get();
