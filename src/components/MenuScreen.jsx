@@ -5,6 +5,7 @@ import { AchievementPanel, useAchievementStore } from '../features/achievement';
 export default function MenuScreen() {
   const goToSetup = useGameStore(s => s.goToSetup);
   const goToEditor = useGameStore(s => s.goToEditor);
+  const goToTeacherPage = useGameStore(s => s.goToTeacherPage);
   const loadGame = useGameStore(s => s.loadGame);
   const setStudentId = useGameStore(s => s.setStudentId);
   const loadStudentId = useGameStore(s => s.loadStudentId);
@@ -305,6 +306,13 @@ export default function MenuScreen() {
           className="px-8 py-4 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl text-xl font-bold shadow-lg hover:shadow-orange-500/50 hover:scale-105 transition-all"
         >
           🗺️ 地图编辑器
+        </button>
+
+        <button
+          onClick={goToTeacherPage}
+          className="px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl text-xl font-bold shadow-lg hover:shadow-purple-500/50 hover:scale-105 transition-all"
+        >
+          🎓 教师端
         </button>
         
         <button

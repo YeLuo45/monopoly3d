@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useGameStore } from '../game/store';
+import { getStudentCommunicator } from '../communication/broadcastChannel';
 
 export default function QuestionModal() {
   const currentQuestion = useGameStore(s => s.currentQuestion);
@@ -12,8 +13,22 @@ export default function QuestionModal() {
   const timerEnabled = useGameStore(s => s.timerEnabled);
   
   const [imageError, setImageError] = useState(false);
+  const [isFrozen, setIsFrozen] = useState(false);
   
   const currentPlayer = players[currentPlayerIndex];
+  const communicator = getStudentCommunicator();
+  
+  // Check frozen status
+  useEffect(() => {
+    setIsFrozen(communicator.isFrozen);
+  }, [communicator]);
+  
+  // Send answer to teacher when answered
+  useEffect(() => {
+    if (questionAnswered !== null && currentQuestion && !currentPlayer?.isAI) {
+      communicator.sendAnswer(currentQuestion.id, questionAnswered, questionAnswered === 'correct');
+    }
+  }, [questionAnswered, currentQuestion, currentPlayer?.isAI, communicator]);
   
   // TTS for kindergarten
   useEffect(() => {
@@ -31,6 +46,19 @@ export default function QuestionModal() {
   }, [currentQuestion]);
   
   if (!currentQuestion) return null;
+  
+  // If frozen, show frozen state
+  if (isFrozen && !currentPlayer?.isAI) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm z-50">
+        <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl p-8 w-[600px] max-w-[90vw] shadow-2xl border border-yellow-500/30 text-center">
+          <div className="text-6xl mb-4">❄️</div>
+          <h2 className="text-2xl font-bold text-yellow-400 mb-2">你已被教师冻结</h2>
+          <p className="text-gray-400">当前无法回答问题，请等待教师解冻</p>
+        </div>
+      </div>
+    );
+  }
   
   const timerPercent = (questionTimer / 15) * 100;
   const timerColor = questionTimer > 10 ? 'bg-green-500' : questionTimer > 5 ? 'bg-yellow-500' : 'bg-red-500';

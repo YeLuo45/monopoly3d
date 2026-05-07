@@ -136,6 +136,8 @@ export const useGameStore = create((set, get) => ({
 
   goToEditor: () => set({ screen: 'editor' }),
 
+  goToTeacherPage: () => set({ screen: 'teacher_page' }),
+
   // Student ID management
   setStudentId: (id) => {
     set({ studentId: id });

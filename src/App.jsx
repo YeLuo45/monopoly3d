@@ -15,6 +15,9 @@ import './index.css';
 // Achievement System
 import { AchievementPopup, TaskProgress, WeatherIndicator, Leaderboard, AchievementPanel } from './features/achievement';
 
+// Teaching Tools
+import { TeacherPage, StudentHomeworkPanel } from './features/teaching';
+
 function AudioControls() {
   const [isMuted, setIsMuted] = useState(getIsMuted());
   const [isPlaying, setIsPlaying] = useState(getBgmPlaying());
@@ -90,6 +93,7 @@ function App() {
       {screen === 'setup' && <SetupScreen />}
       {screen === 'piece_selection' && <PieceSelectionScreen />}
       {screen === 'editor' && <EditorPage />}
+      {screen === 'teacher_page' && <TeacherPage />}
       {screen === 'playing' && (
         <>
           <AudioControls />
@@ -99,6 +103,7 @@ function App() {
           <GameBoard />
           <FloatingEffects />
           <TeacherConsole />
+          <StudentHomeworkPanel />
         </>
       )}
       {screen === 'gameover' && <GameOverScreen />}
