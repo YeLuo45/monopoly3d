@@ -12,6 +12,9 @@ import FloatingEffects from './components/FloatingEffects';
 import EditorPage from './editor/EditorPage';
 import './index.css';
 
+// Achievement System
+import { AchievementPopup, TaskProgress, WeatherIndicator, Leaderboard, AchievementPanel } from './features/achievement';
+
 function AudioControls() {
   const [isMuted, setIsMuted] = useState(getIsMuted());
   const [isPlaying, setIsPlaying] = useState(getBgmPlaying());
@@ -90,12 +93,18 @@ function App() {
       {screen === 'playing' && (
         <>
           <AudioControls />
+          <WeatherIndicator />
+          <TaskProgress />
+          <Leaderboard />
           <GameBoard />
           <FloatingEffects />
           <TeacherConsole />
         </>
       )}
       {screen === 'gameover' && <GameOverScreen />}
+      {/* Achievement System - Overlays */}
+      <AchievementPopup />
+      <AchievementPanel />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useGameStore } from '../game/store';
+import { AchievementPanel, useAchievementStore } from '../features/achievement';
 
 export default function MenuScreen() {
   const goToSetup = useGameStore(s => s.goToSetup);
@@ -8,8 +9,10 @@ export default function MenuScreen() {
   const setStudentId = useGameStore(s => s.setStudentId);
   const loadStudentId = useGameStore(s => s.loadStudentId);
   const studentId = useGameStore(s => s.studentId);
+  const achievementStore = useAchievementStore(s => s.profileStats);
   
   const [showStudentIdPrompt, setShowStudentIdPrompt] = useState(false);
+  const [showAchievementPanel, setShowAchievementPanel] = useState(false); // eslint-disable-line no-unused-vars
   const [studentName, setStudentName] = useState('');
   const [showMultiplayerMenu, setShowMultiplayerMenu] = useState(false);
   const [multiplayerMode, setMultiplayerMode] = useState(null); // null | 'host' | 'join'
@@ -305,10 +308,17 @@ export default function MenuScreen() {
         </button>
         
         <button
-          onClick={() => alert('📖 游戏规则：\n\n1. 轮流掷骰子移动棋子\n2. 停在空地上可以购买地产\n3. 停在问题格子上回答问题\n4. 答对获得奖励，答错扣除金钱\n5. 建造房屋可增加租金收入\n6. 其他玩家经过你的地产时需付租金\n7. 破产即出局，最后一人获胜！')}
+          onClick={() => alert('📖 游戏规则：\\n\\n1. 轮流掷骰子移动棋子\\n2. 停在空地上可以购买地产\\n3. 停在问题格子上回答问题\\n4. 答对获得奖励，答错扣除金钱\\n5. 建造房屋可增加租金收入\\n6. 其他玩家经过你的地产时需付租金\\n7. 破产即出局，最后一人获胜！')}
           className="px-8 py-4 bg-gradient-to-r from-gray-600 to-gray-700 rounded-xl text-xl font-bold shadow-lg hover:shadow-gray-500/50 hover:scale-105 transition-all"
         >
           📖 游戏规则
+        </button>
+        
+        <button
+          onClick={() => setShowAchievementPanel(true)}
+          className="px-8 py-4 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-xl text-xl font-bold shadow-lg hover:shadow-yellow-500/50 hover:scale-105 transition-all"
+        >
+          🏆 成就中心
         </button>
         
         <button
@@ -331,6 +341,11 @@ export default function MenuScreen() {
           ℹ️ 关于游戏
         </button>
       </div>
+
+      {/* Achievement Panel Modal */}
+      {showAchievementPanel && (
+        <AchievementPanel onClose={() => setShowAchievementPanel(false)} />
+      )}
     </div>
   );
 }

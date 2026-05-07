@@ -4,6 +4,26 @@ import { rollDice, getDiceResult } from './dice';
 import { AI_DIFFICULTY, chooseAIAction } from './aiBrain';
 import { THEMES } from './themes';
 
+// Achievement System Integration
+import {
+  initAchievementTracking,
+  onDiceRolled,
+  onPassGo,
+  onEscapeJail,
+  onPropertyBought,
+  onHouseBuilt,
+  onRentCollected,
+  onQuestionAnswered,
+  onTileVisit,
+  onGameWin,
+  onGameEnd,
+  onMultiplayerEvent,
+  onEditorEvent,
+  getWeatherBonus,
+  createAchievementState,
+} from '../features/achievement/achievementIntegration';
+import { useAchievementStore } from '../features/achievement/achievementStore';
+
 const PLAYER_COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'];
 const AI_NAMES = ['小智', '小慧', '小能'];
 const PIECE_NAMES = ['小汽车', '小狗狗', '小猫咪', '陀螺', '奥特曼', '皮卡丘', '哆啦A梦'];
@@ -359,6 +379,8 @@ export const useGameStore = create((set, get) => ({
     }
     // Start tracking game stats
     get().startGameStats();
+    // Initialize achievement tracking for new game
+    initAchievementTracking();
     set({
       players,
       pieceSelections: pieceMap,
@@ -386,6 +408,9 @@ export const useGameStore = create((set, get) => ({
       const isDoubles = d1 === d2;
       const newDoubles = isDoubles ? state.consecutiveDoubles + 1 : 0;
       
+      // Track dice for achievement
+      onDiceRolled([d1, d2]);
+      
       // Three doubles = go to jail
       if (newDoubles >= 3) {
         const players = [...state.players];
@@ -412,6 +437,8 @@ export const useGameStore = create((set, get) => ({
           const players = [...state.players];
           players[state.currentPlayerIndex].inJail = false;
           players[state.currentPlayerIndex].jailTurns = 0;
+          // Track jail escape achievement
+          onEscapeJail();
           const newPos = getNextPosition(currentPlayer.position, total);
           set({
             diceRolling: false,
@@ -458,6 +485,8 @@ export const useGameStore = create((set, get) => ({
         const players = [...state.players];
         players[state.currentPlayerIndex].money += 200;
         players[state.currentPlayerIndex].position = newPos;
+        // Track passing Go achievement
+        onPassGo();
         set({ players });
       }
       
@@ -494,6 +523,9 @@ export const useGameStore = create((set, get) => ({
     const player = state.players[state.currentPlayerIndex];
     const tile = BOARD_CONFIG[player.position];
     
+    // Record tile visit for achievement
+    onTileVisit(tile.id);
+    
     // Record tile visit
     get().recordTileVisit(tile.id);
     
@@ -512,6 +544,10 @@ export const useGameStore = create((set, get) => ({
             // Record rent transactions
             get().recordRentPaid(rentAmount);
             get().recordRentReceived(rentAmount);
+            // Track achievement for rent collection (only for owner)
+            if (!owner.isAI) {
+              onRentCollected(rentAmount);
+            }
             set({ players, phase: 'roll', ...advanceToNextPlayer(state) });
           } else {
             // Bankruptcy
@@ -521,6 +557,10 @@ export const useGameStore = create((set, get) => ({
             // Record rent transactions
             get().recordRentPaid(rentAmount);
             get().recordRentReceived(rentAmount);
+            // Track achievement for rent collection (only for owner)
+            if (!owner.isAI) {
+              onRentCollected(rentAmount + player.money);
+            }
             // Transfer properties
             tile.owner = owner.id;
             owner.properties.push(tile.id);
@@ -616,7 +656,10 @@ export const useGameStore = create((set, get) => ({
     
     const isCorrect = answerIndex === state.currentQuestion.correctIndex;
     const players = [...state.players];
-    const reward = isCorrect ? 100 : -50;
+    // Apply weather bonus to reward
+    const weatherBonus = getWeatherBonus();
+    const baseReward = isCorrect ? 100 : -50;
+    const reward = Math.round(baseReward * weatherBonus);
     players[state.currentPlayerIndex].money += reward;
     
     // If went bankrupt from wrong answer
@@ -626,6 +669,10 @@ export const useGameStore = create((set, get) => ({
     
     // Record question stats
     get().recordQuestion(state.currentQuestion.category, isCorrect, answerIndex);
+    
+    // Track achievement for question answered
+    const answerTime = 15 - state.questionTimer; // Approximate time taken
+    onQuestionAnswered(state.currentQuestion.category, isCorrect, answerTime);
     
     set({
       players,
@@ -656,6 +703,9 @@ export const useGameStore = create((set, get) => ({
     // Record property purchase
     get().recordPropertyPurchase(tile.id, tile.name, tile.price);
     
+    // Track achievement
+    onPropertyBought(tile.id, tile.price);
+    
     set({ players, phase: 'roll', ...advanceToNextPlayer(state) });
   },
   
@@ -676,6 +726,9 @@ export const useGameStore = create((set, get) => ({
     const players = [...state.players];
     players[state.currentPlayerIndex].money -= 50;
     BOARD_CONFIG[tileId].houses += 1;
+    
+    // Track achievement
+    onHouseBuilt();
     
     set({ players });
   },
@@ -764,10 +817,23 @@ toggleTeacherMode: () => set(s => ({ teacherMode: !s.teacherMode })),
     const activePlayers = state.players.filter(p => !p.isBankrupt);
     
     if (activePlayers.length <= 1) {
+      // Determine winner and rank
+      const winner = activePlayers[0] || null;
+      const isHumanPlayer = winner && !winner.isAI;
+      const humanPlayer = state.players.find(p => !p.isAI);
+      const isRichest = humanPlayer && winner && humanPlayer.id === winner.id;
+      const rank = winner ? state.players.filter(p => !p.isBankrupt).findIndex(p => p.id === winner.id) + 1 : state.players.length;
+      
+      // Track achievements for game end
+      if (isHumanPlayer) {
+        onGameWin(rank, isRichest);
+      }
+      onGameEnd(rank);
+      
       // Finalize and save game stats
       get().finalizeGameStats();
       get().saveGameStatsToProfile();
-      set({ winner: activePlayers[0] || null, phase: 'game_over', screen: 'gameover' });
+      set({ winner, phase: 'game_over', screen: 'gameover' });
       return;
     }
     
@@ -778,10 +844,22 @@ toggleTeacherMode: () => set(s => ({ teacherMode: !s.teacherMode })),
         const netB = calculateNetWorth(b);
         return netB - netA;
       });
+      const winner = ranked[0];
+      const isHumanPlayer = !winner.isAI;
+      const humanPlayer = state.players.find(p => !p.isAI);
+      const isRichest = humanPlayer && winner && humanPlayer.id === winner.id;
+      const rank = humanPlayer ? ranked.findIndex(p => p.id === humanPlayer.id) + 1 : ranked.length;
+      
+      // Track achievements for game end
+      if (isHumanPlayer) {
+        onGameWin(rank, isRichest);
+      }
+      onGameEnd(rank);
+      
       // Finalize and save game stats
       get().finalizeGameStats();
       get().saveGameStatsToProfile();
-      set({ winner: ranked[0], phase: 'game_over', screen: 'gameover' });
+      set({ winner, phase: 'game_over', screen: 'gameover' });
     }
   },
   
