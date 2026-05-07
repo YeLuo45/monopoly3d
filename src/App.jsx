@@ -9,6 +9,7 @@ import GameBoard from './components/GameBoard';
 import GameOverScreen from './components/GameOverScreen';
 import TeacherConsole from './components/TeacherConsole';
 import FloatingEffects from './components/FloatingEffects';
+import EditorPage from './editor/EditorPage';
 import './index.css';
 
 function AudioControls() {
@@ -85,6 +86,7 @@ function App() {
       {screen === 'menu' && <MenuScreen />}
       {screen === 'setup' && <SetupScreen />}
       {screen === 'piece_selection' && <PieceSelectionScreen />}
+      {screen === 'editor' && <EditorPage />}
       {screen === 'playing' && (
         <>
           <AudioControls />

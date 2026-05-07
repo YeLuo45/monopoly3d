@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { useGameStore } from '../game/store';
+import StudentReport, { StudentReportSummary } from './StudentReport';
 
 export default function GameOverScreen() {
   const winner = useGameStore(s => s.winner);
@@ -6,11 +8,12 @@ export default function GameOverScreen() {
   const goToMenu = useGameStore(s => s.goToMenu);
   const goToSetup = useGameStore(s => s.goToSetup);
   
+  const [showStudentReport, setShowStudentReport] = useState(false);
+  
   // Rank all players by net worth
   const rankedPlayers = [...players].sort((a, b) => {
     const netA = a.money + a.properties.reduce((sum, pid) => {
-      // Rough estimate of property value
-      return sum + 100; // Simplified
+      return sum + 100; // Simplified property value estimate
     }, 0);
     const netB = b.money + b.properties.reduce((sum, pid) => {
       return sum + 100;
@@ -20,6 +23,11 @@ export default function GameOverScreen() {
   
   return (
     <div className="flex flex-col items-center justify-center min-h-screen text-white p-8">
+      {/* Student Report Modal */}
+      {showStudentReport && (
+        <StudentReport onClose={() => setShowStudentReport(false)} />
+      )}
+      
       {/* Trophy / Winner display */}
       <div className="mb-8 text-center">
         {winner ? (
@@ -77,6 +85,11 @@ export default function GameOverScreen() {
             </div>
           ))}
         </div>
+      </div>
+      
+      {/* Student Report Summary Card */}
+      <div className="w-full max-w-md mb-8">
+        <StudentReportSummary onViewFullReport={() => setShowStudentReport(true)} />
       </div>
       
       {/* Stats summary */}

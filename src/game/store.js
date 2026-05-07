@@ -84,6 +84,26 @@ const initialState = {
 
   // Theme
   currentTheme: THEMES.CLASSIC,
+
+  // Student ID for persistent profile
+  studentId: null,
+
+  // Game statistics tracking
+  gameStats: {
+    startTime: null,
+    endTime: null,
+    questionsAnswered: [], // { category, correct, answer, time }
+    propertiesBought: [], // { tileId, tileName, price, time }
+    rentPaid: 0,
+    rentReceived: 0,
+    mostVisitedTiles: {}, // tileId -> count
+  },
+
+  // Multiplayer state
+  isMultiplayer: false,
+  isHost: false,
+  peerId: null,
+  roomCode: null,
 };
 
 export const useGameStore = create((set, get) => ({
@@ -93,6 +113,216 @@ export const useGameStore = create((set, get) => ({
   goToMenu: () => set({ ...initialState, currentTheme: get().currentTheme }),
 
   goToSetup: () => set({ screen: 'setup' }),
+
+  goToEditor: () => set({ screen: 'editor' }),
+
+  // Student ID management
+  setStudentId: (id) => {
+    set({ studentId: id });
+    localStorage.setItem('monopoly3d_student_id', id);
+  },
+
+  loadStudentId: () => {
+    const saved = localStorage.getItem('monopoly3d_student_id');
+    if (saved) set({ studentId: saved });
+    return saved;
+  },
+
+  // Game statistics tracking
+  recordQuestion: (category, correct, answer) => {
+    set(s => ({
+      gameStats: {
+        ...s.gameStats,
+        questionsAnswered: [
+          ...s.gameStats.questionsAnswered,
+          {
+            category,
+            correct,
+            answer,
+            timestamp: Date.now(),
+          },
+        ],
+      },
+    }));
+  },
+
+  recordPropertyPurchase: (tileId, tileName, price) => {
+    set(s => ({
+      gameStats: {
+        ...s.gameStats,
+        propertiesBought: [
+          ...s.gameStats.propertiesBought,
+          { tileId, tileName, price, timestamp: Date.now() },
+        ],
+      },
+    }));
+  },
+
+  recordRentPaid: (amount) => {
+    set(s => ({
+      gameStats: {
+        ...s.gameStats,
+        rentPaid: s.gameStats.rentPaid + amount,
+      },
+    }));
+  },
+
+  recordRentReceived: (amount) => {
+    set(s => ({
+      gameStats: {
+        ...s.gameStats,
+        rentReceived: s.gameStats.rentReceived + amount,
+      },
+    }));
+  },
+
+  recordTileVisit: (tileId) => {
+    set(s => ({
+      gameStats: {
+        ...s.gameStats,
+        mostVisitedTiles: {
+          ...s.gameStats.mostVisitedTiles,
+          [tileId]: (s.gameStats.mostVisitedTiles[tileId] || 0) + 1,
+        },
+      },
+    }));
+  },
+
+  startGameStats: () => {
+    set(s => ({
+      gameStats: {
+        startTime: Date.now(),
+        endTime: null,
+        questionsAnswered: [],
+        propertiesBought: [],
+        rentPaid: 0,
+        rentReceived: 0,
+        mostVisitedTiles: {},
+      },
+    }));
+  },
+
+  finalizeGameStats: () => {
+    set(s => ({
+      gameStats: {
+        ...s.gameStats,
+        endTime: Date.now(),
+      },
+    }));
+  },
+
+  // Save game stats to student profile in localStorage
+  saveGameStatsToProfile: () => {
+    const state = get();
+    const studentId = state.studentId || 'anonymous';
+    const profilesJson = localStorage.getItem('monopoly3d_student_profiles');
+    const profiles = profilesJson ? JSON.parse(profilesJson) : {};
+
+    if (!profiles[studentId]) {
+      profiles[studentId] = { name: studentId, games: [] };
+    }
+
+    // Calculate final stats
+    const duration = state.gameStats.endTime - state.gameStats.startTime;
+    const questionsAnswered = state.gameStats.questionsAnswered;
+    const totalQuestions = questionsAnswered.length;
+    const correctQuestions = questionsAnswered.filter(q => q.correct).length;
+    const accuracy = totalQuestions > 0 ? Math.round((correctQuestions / totalQuestions) * 100) : 0;
+
+    // Calculate accuracy by category
+    const categoryStats = {};
+    ALL_CATEGORIES.forEach(cat => {
+      const catQuestions = questionsAnswered.filter(q => q.category === cat);
+      const catCorrect = catQuestions.filter(q => q.correct).length;
+      categoryStats[cat] = {
+        total: catQuestions.length,
+        correct: catCorrect,
+        accuracy: catQuestions.length > 0 ? Math.round((catCorrect / catQuestions.length) * 100) : 0,
+      };
+    });
+
+    // Find weakest and strongest categories
+    const categoriesWithData = Object.entries(categoryStats).filter(([_, stats]) => stats.total > 0);
+    const weakestCategory = categoriesWithData.length > 0
+      ? categoriesWithData.reduce((min, [cat, stats]) => stats.accuracy < min[1].accuracy ? [cat, stats] : min)
+      : null;
+    const strongestCategory = categoriesWithData.length > 0
+      ? categoriesWithData.reduce((max, [cat, stats]) => stats.accuracy > max[1].accuracy ? [cat, stats] : max)
+      : null;
+
+    // Calculate rank
+    const rankedPlayers = [...state.players].sort((a, b) => {
+      const netA = a.money + a.properties.reduce((sum, pid) => sum + 100, 0);
+      const netB = b.money + b.properties.reduce((sum, pid) => sum + 100, 0);
+      return netB - netA;
+    });
+    const playerRank = rankedPlayers.findIndex(p => !p.isAI && p.id === state.players[state.currentPlayerIndex]?.id) + 1;
+
+    const gameRecord = {
+      date: new Date().toISOString(),
+      duration,
+      ageTier: state.ageTier,
+      totalQuestions,
+      correctQuestions,
+      accuracy,
+      categoryStats,
+      weakestCategory: weakestCategory ? { category: weakestCategory[0], ...weakestCategory[1] } : null,
+      strongestCategory: strongestCategory ? { category: strongestCategory[0], ...strongestCategory[1] } : null,
+      propertiesBought: state.gameStats.propertiesBought,
+      rentPaid: state.gameStats.rentPaid,
+      rentReceived: state.gameStats.rentReceived,
+      mostVisitedTiles: state.gameStats.mostVisitedTiles,
+      rank: playerRank,
+      totalPlayers: state.players.length,
+    };
+
+    profiles[studentId].games.push(gameRecord);
+    profiles[studentId].lastPlayed = new Date().toISOString();
+    profiles[studentId].totalGames = (profiles[studentId].totalGames || 0) + 1;
+
+    localStorage.setItem('monopoly3d_student_profiles', JSON.stringify(profiles));
+    return gameRecord;
+  },
+
+  // Multiplayer actions
+  hostGame: (peerId, roomCode) => {
+    set({
+      isMultiplayer: true,
+      isHost: true,
+      peerId,
+      roomCode,
+    });
+  },
+
+  joinGame: (peerId, roomCode) => {
+    set({
+      isMultiplayer: true,
+      isHost: false,
+      peerId,
+      roomCode,
+    });
+  },
+
+  leaveGame: () => {
+    set({
+      isMultiplayer: false,
+      isHost: false,
+      peerId: null,
+      roomCode: null,
+    });
+  },
+
+  broadcastState: (state) => {
+    // This will be connected to multiplayer.js
+    if (window.monopolyMultiplayer) {
+      window.monopolyMultiplayer.broadcastGameState(state);
+    }
+  },
+
+  receiveState: (state) => {
+    // Apply received state from host
+    set(state);
+  },
 
   setAgeTier: (tier) => set({ ageTier: tier }),
 
@@ -127,6 +357,8 @@ export const useGameStore = create((set, get) => ({
       const colorIdx = pieceMap[globalIdx] !== undefined ? pieceMap[globalIdx] : globalIdx;
       players.push(createPlayer(globalIdx, AI_NAMES[i], true, PLAYER_COLORS[colorIdx % 4]));
     }
+    // Start tracking game stats
+    get().startGameStats();
     set({
       players,
       pieceSelections: pieceMap,
@@ -262,6 +494,9 @@ export const useGameStore = create((set, get) => ({
     const player = state.players[state.currentPlayerIndex];
     const tile = BOARD_CONFIG[player.position];
     
+    // Record tile visit
+    get().recordTileVisit(tile.id);
+    
     switch (tile.type) {
       case TILE_TYPES.PROPERTY:
         if (tile.owner === null) {
@@ -274,12 +509,18 @@ export const useGameStore = create((set, get) => ({
             const players = [...state.players];
             players[player.id].money -= rentAmount;
             players[owner.id].money += rentAmount;
+            // Record rent transactions
+            get().recordRentPaid(rentAmount);
+            get().recordRentReceived(rentAmount);
             set({ players, phase: 'roll', ...advanceToNextPlayer(state) });
           } else {
             // Bankruptcy
             const players = [...state.players];
             players[player.id].money -= rentAmount;
             players[player.id].isBankrupt = true;
+            // Record rent transactions
+            get().recordRentPaid(rentAmount);
+            get().recordRentReceived(rentAmount);
             // Transfer properties
             tile.owner = owner.id;
             owner.properties.push(tile.id);
@@ -383,6 +624,9 @@ export const useGameStore = create((set, get) => ({
       players[state.currentPlayerIndex].isBankrupt = true;
     }
     
+    // Record question stats
+    get().recordQuestion(state.currentQuestion.category, isCorrect, answerIndex);
+    
     set({
       players,
       questionAnswered: isCorrect ? 'correct' : 'incorrect',
@@ -408,6 +652,9 @@ export const useGameStore = create((set, get) => ({
     players[state.currentPlayerIndex].money -= tile.price;
     players[state.currentPlayerIndex].properties.push(tile.id);
     BOARD_CONFIG[tile.id].owner = player.id;
+    
+    // Record property purchase
+    get().recordPropertyPurchase(tile.id, tile.name, tile.price);
     
     set({ players, phase: 'roll', ...advanceToNextPlayer(state) });
   },
@@ -517,6 +764,9 @@ toggleTeacherMode: () => set(s => ({ teacherMode: !s.teacherMode })),
     const activePlayers = state.players.filter(p => !p.isBankrupt);
     
     if (activePlayers.length <= 1) {
+      // Finalize and save game stats
+      get().finalizeGameStats();
+      get().saveGameStatsToProfile();
       set({ winner: activePlayers[0] || null, phase: 'game_over', screen: 'gameover' });
       return;
     }
@@ -528,6 +778,9 @@ toggleTeacherMode: () => set(s => ({ teacherMode: !s.teacherMode })),
         const netB = calculateNetWorth(b);
         return netB - netA;
       });
+      // Finalize and save game stats
+      get().finalizeGameStats();
+      get().saveGameStatsToProfile();
       set({ winner: ranked[0], phase: 'game_over', screen: 'gameover' });
     }
   },
