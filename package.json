@@ -12,6 +12,7 @@
   "dependencies": {
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
+    "@supabase/supabase-js": "^2.105.3",
     "@tailwindcss/vite": "^4.2.2",
     "autoprefixer": "^10.4.27",
     "howler": "^2.2.4",

@@ -121,9 +121,11 @@ const initialState = {
 
   // Multiplayer state
   isMultiplayer: false,
+  isOnlineMultiplayer: false,
   isHost: false,
   peerId: null,
   roomCode: null,
+  onlinePlayerIndex: 0,
 };
 
 export const useGameStore = create((set, get) => ({
@@ -325,9 +327,35 @@ export const useGameStore = create((set, get) => ({
     });
   },
 
+  // Online multiplayer actions (Supabase-based)
+  startOnlineGame: (roomCode, isHost) => {
+    set({
+      isMultiplayer: true,
+      isOnlineMultiplayer: true,
+      isHost,
+      roomCode,
+    });
+  },
+
+  setOnlinePlayerIndex: (index) => {
+    set({ onlinePlayerIndex: index });
+  },
+
+  endOnlineGame: () => {
+    set({
+      isMultiplayer: false,
+      isOnlineMultiplayer: false,
+      isHost: false,
+      peerId: null,
+      roomCode: null,
+      onlinePlayerIndex: 0,
+    });
+  },
+
   leaveGame: () => {
     set({
       isMultiplayer: false,
+      isOnlineMultiplayer: false,
       isHost: false,
       peerId: null,
       roomCode: null,

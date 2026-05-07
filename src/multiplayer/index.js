@@ -1,0 +1,12 @@
+/**
+ * Multiplayer Module Exports
+ * 
+ * Online multiplayer system using Supabase Realtime
+ */
+
+export { supabase, isSupabaseConfigured } from './supabaseClient';
+export { default as useMultiplayerStore } from './multiplayerStore';
+export { default as OnlineLobby } from './OnlineLobby';
+export { default as RoomBrowser } from './RoomBrowser';
+export { default as MultiplayerHUD } from './MultiplayerHUD';
+export { default as GamePage } from './GamePage';

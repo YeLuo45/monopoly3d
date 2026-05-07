@@ -18,6 +18,11 @@ import { AchievementPopup, TaskProgress, WeatherIndicator, Leaderboard, Achievem
 // Teaching Tools
 import { TeacherPage, StudentHomeworkPanel } from './features/teaching';
 
+// Online Multiplayer
+import OnlineLobby from './multiplayer/OnlineLobby';
+import MultiplayerHUD from './multiplayer/MultiplayerHUD';
+import GamePage from './multiplayer/GamePage';
+
 function AudioControls() {
   const [isMuted, setIsMuted] = useState(getIsMuted());
   const [isPlaying, setIsPlaying] = useState(getBgmPlaying());
@@ -71,7 +76,10 @@ function AudioControls() {
 function App() {
   const screen = useGameStore(s => s.screen);
   const currentTheme = useGameStore(s => s.currentTheme);
+  const isMultiplayer = useGameStore(s => s.isMultiplayer);
+  const isOnlineMultiplayer = useGameStore(s => s.isOnlineMultiplayer);
   const theme = BOARD_THEMES[currentTheme] || BOARD_THEMES.classic;
+  const [showOnlineLobby, setShowOnlineLobby] = useState(false);
 
   // Initialize audio on first interaction
   useEffect(() => {
@@ -100,6 +108,7 @@ function App() {
           <WeatherIndicator />
           <TaskProgress />
           <Leaderboard />
+          {isOnlineMultiplayer && <MultiplayerHUD />}
           <GameBoard />
           <FloatingEffects />
           <TeacherConsole />

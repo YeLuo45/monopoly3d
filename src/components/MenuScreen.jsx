@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useGameStore } from '../game/store';
 import { AchievementPanel, useAchievementStore } from '../features/achievement';
+import { OnlineLobby } from '../multiplayer';
 
 export default function MenuScreen() {
   const goToSetup = useGameStore(s => s.goToSetup);
@@ -15,7 +16,9 @@ export default function MenuScreen() {
   const [showStudentIdPrompt, setShowStudentIdPrompt] = useState(false);
   const [showAchievementPanel, setShowAchievementPanel] = useState(false); // eslint-disable-line no-unused-vars
   const [studentName, setStudentName] = useState('');
-  const [showMultiplayerMenu, setShowMultiplayerMenu] = useState(false);
+  const [showOnlineMultiplayer, setShowOnlineMultiplayer] = useState(false);
+  // Legacy LAN multiplayer state (for backward compatibility)
+  const [showLANMultiplayerMenu, setShowLANMultiplayerMenu] = useState(false);
   const [multiplayerMode, setMultiplayerMode] = useState(null); // null | 'host' | 'join'
   const [roomCode, setRoomCode] = useState('');
   const [joinCode, setJoinCode] = useState('');
@@ -94,7 +97,19 @@ export default function MenuScreen() {
     setRoomCode('');
     setJoinCode('');
     setConnectionError('');
-    setShowMultiplayerMenu(false);
+    setShowLANMultiplayerMenu(false);
+  };
+  
+  // Online multiplayer handlers
+  const handleOnlineMultiplayerBack = () => {
+    setShowOnlineMultiplayer(false);
+  };
+  
+  const handleOnlineGameStart = () => {
+    // Transition to online game
+    const store = useGameStore.getState();
+    store.setPlayers(1, 0, []); // Start with 1 human in multiplayer
+    setShowOnlineMultiplayer(false);
   };
   
   const handleStartMultiplayerGame = () => {
@@ -154,14 +169,24 @@ export default function MenuScreen() {
     );
   }
   
-  // Multiplayer Menu Modal
-  if (showMultiplayerMenu) {
+  // Online Multiplayer Lobby
+  if (showOnlineMultiplayer) {
+    return (
+      <OnlineLobby 
+        onBack={handleOnlineMultiplayerBack}
+        onGameStart={handleOnlineGameStart}
+      />
+    );
+  }
+  
+  // LAN Multiplayer Menu Modal
+  if (showLANMultiplayerMenu) {
     return (
       <div className="flex flex-col items-center justify-center h-screen text-white">
         <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-3xl p-8 max-w-md w-full mx-4 border border-purple-500/30">
           <div className="flex items-center justify-between mb-6">
             <div className="text-center flex-1">
-              <div className="text-4xl mb-2">🌐</div>
+              <div className="text-4xl mb-2">📡</div>
               <h2 className="text-xl font-bold">局域网联机</h2>
             </div>
             <button
@@ -295,10 +320,17 @@ export default function MenuScreen() {
         )}
         
         <button
-          onClick={() => setShowMultiplayerMenu(true)}
+          onClick={() => setShowOnlineMultiplayer(true)}
           className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-xl font-bold shadow-lg hover:shadow-green-500/50 hover:scale-105 transition-all"
         >
-          🌐 局域网联机
+          🌐 在线对战
+        </button>
+        
+        <button
+          onClick={() => setShowLANMultiplayerMenu(true)}
+          className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl text-xl font-bold shadow-lg hover:shadow-cyan-500/50 hover:scale-105 transition-all"
+        >
+          📡 局域网联机
         </button>
         
         <button
