@@ -20,6 +20,9 @@ import { AchievementPopup, TaskProgress, WeatherIndicator, Leaderboard, Achievem
 // Teaching Tools
 import { TeacherPage, StudentHomeworkPanel } from './features/teaching';
 
+// Learning Features
+import { AIAssistant, PracticeMode, LearningReport } from './features/learning';
+
 // Online Multiplayer
 import OnlineLobby from './multiplayer/OnlineLobby';
 import MultiplayerHUD from './multiplayer/MultiplayerHUD';
@@ -115,6 +118,10 @@ function App() {
           <FloatingEffects />
           <TeacherConsole />
           <StudentHomeworkPanel />
+          {/* Learning Features */}
+          <AIAssistant />
+          <PracticeMode />
+          <LearningReport />
         </>
       )}
       {screen === 'gameover' && <GameOverScreen />}

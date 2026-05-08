@@ -27,21 +27,52 @@ const CATEGORY_ICONS = {
 };
 
 // AI Learning Stats Content Component
-function AIStatsContent() {
-  const [aiStats, setAiStats] = useState({});
-  const [recentDecisions, setRecentDecisions] = useState([]);
+function AIStatsContent({ studentId }) {
+  const [aiStats, setAiStats] = useState({ totalDecisions: 0, buyDecisions: 0, passDecisions: 0, buildDecisions: 0, recentDecisions: [] });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const stats = useGameStore.getState().getAILearningStats();
-    setAiStats(stats);
-    setRecentDecisions(stats.recentDecisions || []);
-  }, []);
+    loadAIStatsFromProfile();
+  }, [studentId]);
 
-  const handleReset = () => {
-    if (useGameStore.getState().resetAILearning()) {
-      setAiStats({ totalDecisions: 0, buyDecisions: 0, passDecisions: 0, buildDecisions: 0, errorRate: 0 });
-      setRecentDecisions([]);
+  const loadAIStatsFromProfile = () => {
+    setIsLoading(true);
+    const profilesJson = localStorage.getItem('monopoly3d_student_profiles');
+    if (!profilesJson) {
+      setAiStats({ totalDecisions: 0, buyDecisions: 0, passDecisions: 0, buildDecisions: 0, recentDecisions: [] });
+      setIsLoading(false);
+      return;
     }
+
+    const profiles = JSON.parse(profilesJson);
+    const profile = studentId ? profiles[studentId] : null;
+    
+    if (!profile || !profile.games || profile.games.length === 0) {
+      setAiStats({ totalDecisions: 0, buyDecisions: 0, passDecisions: 0, buildDecisions: 0, recentDecisions: [] });
+      setIsLoading(false);
+      return;
+    }
+
+    // Aggregate AI decisions from all saved games
+    let allDecisions = [];
+    profile.games.forEach(game => {
+      if (game.aiDecisions && game.aiDecisions.length > 0) {
+        allDecisions = [...allDecisions, ...game.aiDecisions.map(d => ({ ...d, gameDate: game.date }))];
+      }
+    });
+
+    const buyDecisions = allDecisions.filter(d => d.type === 'buy');
+    const passDecisions = allDecisions.filter(d => d.type === 'pass');
+    const buildDecisions = allDecisions.filter(d => d.type === 'build');
+
+    setAiStats({
+      totalDecisions: allDecisions.length,
+      buyDecisions: buyDecisions.length,
+      passDecisions: passDecisions.length,
+      buildDecisions: buildDecisions.length,
+      recentDecisions: allDecisions.slice(-20).reverse(),
+    });
+    setIsLoading(false);
   };
 
   const getDecisionIcon = (type) => {
@@ -54,72 +85,67 @@ function AIStatsContent() {
     }
   };
 
-  const getDecisionColor = (decision) => {
-    if (decision.outcome === 'good') return 'text-green-400';
-    if (decision.outcome === 'bad') return 'text-red-400';
-    return 'text-gray-300';
-  };
-
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
   };
 
+  const formatDate = (isoString) => {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="bg-gray-800/50 rounded-xl p-6 text-center">
+        <div className="text-gray-400">加载中...</div>
+      </div>
+    );
+  }
+
   return (
     <>
       {/* Stats Overview */}
       <div className="bg-gray-800/50 rounded-xl p-6">
-        <h3 className="text-xl font-bold mb-6 text-center">🧠 AI学习进度</h3>
+        <h3 className="text-xl font-bold mb-6 text-center">🧠 AI学习记录</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-gray-900/50 rounded-xl p-4 text-center">
             <div className="text-4xl mb-2">📝</div>
-            <div className="text-3xl font-bold text-white">{aiStats.totalDecisions || 0}</div>
+            <div className="text-3xl font-bold text-white">{aiStats.totalDecisions}</div>
             <div className="text-gray-400 text-sm">总决策数</div>
           </div>
           <div className="bg-gray-900/50 rounded-xl p-4 text-center">
             <div className="text-4xl mb-2">🏠</div>
-            <div className="text-3xl font-bold text-blue-400">{aiStats.buyDecisions || 0}</div>
+            <div className="text-3xl font-bold text-blue-400">{aiStats.buyDecisions}</div>
             <div className="text-gray-400 text-sm">购房决策</div>
           </div>
           <div className="bg-gray-900/50 rounded-xl p-4 text-center">
-            <div className="text-4xl mb-2">🏗️</div>
-            <div className="text-3xl font-bold text-purple-400">{aiStats.buildDecisions || 0}</div>
-            <div className="text-gray-400 text-sm">建屋决策</div>
+            <div className="text-4xl mb-2">⏭️</div>
+            <div className="text-3xl font-bold text-yellow-400">{aiStats.passDecisions}</div>
+            <div className="text-gray-400 text-sm">跳过决策</div>
           </div>
           <div className="bg-gray-900/50 rounded-xl p-4 text-center">
-            <div className="text-4xl mb-2">⚠️</div>
-            <div className="text-3xl font-bold text-red-400">{aiStats.errorRate || 0}%</div>
-            <div className="text-gray-400 text-sm">决策错误率</div>
+            <div className="text-4xl mb-2">🏗️</div>
+            <div className="text-3xl font-bold text-purple-400">{aiStats.buildDecisions}</div>
+            <div className="text-gray-400 text-sm">建屋决策</div>
           </div>
-        </div>
-        
-        {/* Reset Button */}
-        <div className="flex justify-center mt-4">
-          <button
-            onClick={handleReset}
-            className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 rounded-xl font-bold hover:scale-105 transition-all"
-          >
-            🗑️ 重置AI学习数据
-          </button>
         </div>
       </div>
 
-      {/* Recent Decisions */}
+      {/* Recent Decisions from saved games */}
       <div className="bg-gray-800/50 rounded-xl p-6">
-        <h3 className="text-lg font-bold mb-4">📋 最近决策记录</h3>
-        {recentDecisions.length === 0 ? (
+        <h3 className="text-lg font-bold mb-4">📋 AI决策历史</h3>
+        {aiStats.recentDecisions.length === 0 ? (
           <div className="text-center text-gray-400 py-8">
             <div className="text-5xl mb-4">📭</div>
-            <p>暂无决策记录</p>
-            <p className="text-sm mt-2">开始游戏让AI做出决策吧！</p>
+            <p>暂无AI决策记录</p>
+            <p className="text-sm mt-2">与AI对战时，AI的决策会被记录下来！</p>
           </div>
         ) : (
           <div className="space-y-2 max-h-96 overflow-y-auto">
-            {recentDecisions.map((decision, idx) => (
-              <div 
-                key={idx} 
-                className={`bg-gray-900/50 rounded-lg p-3 flex items-center justify-between ${getDecisionColor(decision)}`}
-              >
+            {aiStats.recentDecisions.map((decision, idx) => (
+              <div key={idx} className="bg-gray-900/50 rounded-lg p-3 flex items-center justify-between text-gray-200">
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">{getDecisionIcon(decision.type)}</span>
                   <div>
@@ -130,13 +156,13 @@ function AIStatsContent() {
                       {decision.type === 'trade' && '交易'}
                     </div>
                     <div className="text-sm text-gray-400">
-                      玩家资金: ¥{decision.playerMoney} | 位置: {decision.playerPosition}
+                      ¥{decision.playerMoney} | 位置:{decision.playerPosition} | 决策:{decision.decision?.toUpperCase()}
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-sm font-bold">{decision.decision?.toUpperCase()}</div>
-                  <div className="text-xs text-gray-500">{formatTime(decision.timestamp)}</div>
+                <div className="text-right text-xs text-gray-500">
+                  <div>{formatDate(decision.gameDate)}</div>
+                  <div>{formatTime(decision.timestamp)}</div>
                 </div>
               </div>
             ))}
@@ -516,7 +542,7 @@ export default function ProfileScreen() {
         {/* AI Learning Stats Tab */}
         {activeTab === 'ai_stats' && (
           <div className="space-y-4">
-            <AIStatsContent />
+            <AIStatsContent studentId={studentId} />
           </div>
         )}
 
