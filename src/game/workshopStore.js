@@ -112,7 +112,7 @@ export const useWorkshopStore = create(
       },
 
       // ==================== PUBLISH ====================
-      publishMap: async ({ name, description, tags, boardConfig, rulesConfig }) => {
+      publishMap: async ({ name, description, tags, difficulty, boardConfig, rulesConfig, tileCount }) => {
         if (!isSupabaseConfigured()) return { error: 'Supabase 未配置' };
         const { userId, userName } = get();
         try {
@@ -124,8 +124,10 @@ export const useWorkshopStore = create(
               name,
               description: description || '',
               tags: tags || [],
+              difficulty: difficulty || 3,
               board_config: boardConfig,
               rules_config: rulesConfig || {},
+              tile_count: tileCount || boardConfig?.length || 0,
             })
             .select()
             .single();
@@ -300,6 +302,46 @@ export const useWorkshopStore = create(
             .select()
             .single();
           if (error) throw error;
+          
+          // Update the item's average rating in the store
+          const { data: avgData } = await supabase
+            .from('workshop_ratings')
+            .select('rating')
+            .eq('item_id', itemId);
+          
+          if (avgData && avgData.length > 0) {
+            const avgRating = avgData.reduce((sum, r) => sum + r.rating, 0) / avgData.length;
+            const ratingCount = avgData.length;
+            
+            // Update in maps/questions/themes
+            if (itemType === 'map') {
+              set(s => ({ maps: s.maps.map(m => m.id === itemId ? { ...m, rating_avg: avgRating, rating_count: ratingCount } : m) }));
+            } else if (itemType === 'question') {
+              set(s => ({ questions: s.questions.map(q => q.id === itemId ? { ...q, rating_avg: avgRating, rating_count: ratingCount } : q) }));
+            }
+          }
+          
+          return { success: true, data };
+        } catch (e) {
+          return { error: e.message };
+        }
+      },
+
+      // Rate difficulty for maps
+      rateMapDifficulty: async (mapId, difficulty) => {
+        if (!isSupabaseConfigured()) return { error: 'Supabase 未配置' };
+        try {
+          const { data, error } = await supabase
+            .from('workshop_maps')
+            .update({ difficulty })
+            .eq('id', mapId)
+            .select()
+            .single();
+          if (error) throw error;
+          
+          // Update local store
+          set(s => ({ maps: s.maps.map(m => m.id === mapId ? { ...m, difficulty } : m) }));
+          
           return { success: true, data };
         } catch (e) {
           return { error: e.message };

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useWorkshopStore } from '../game/workshopStore';
 import { useGameStore } from '../game/store';
 import useEditorStore from '../editor/editorStore';
+import { StarRating, DifficultySelector, DifficultyBadge, RatingModal } from './WorkshopRating';
+import { DIFFICULTY_LEVELS } from '../editor/editorTypes';
 
 const TABS = [
   { key: 'maps', label: '🗺️ 地图', icon: '🗺️' },
@@ -13,34 +15,18 @@ const SORT_OPTIONS = [
   { key: 'popular', label: '🔥 热门' },
   { key: 'recent', label: '⏰ 最新' },
   { key: 'rating', label: '⭐ 评分' },
+  { key: 'difficulty', label: '⚡ 难度' },
 ];
 
 const FILTER_OPTIONS = [
   { key: 'all', label: '全部' },
   { key: 'downloaded', label: '已下载' },
   { key: 'subscribed', label: '已收藏' },
+  { key: 'easy', label: '⭐ 入门' },
+  { key: 'hard', label: '💀 困难' },
 ];
 
-function StarRating({ rating, onRate, readonly = false }) {
-  const [hover, setHover] = useState(0);
-  return (
-    <div className="flex gap-1">
-      {[1, 2, 3, 4, 5].map(star => (
-        <button
-          key={star}
-          className={`text-lg ${readonly ? 'cursor-default' : 'cursor-pointer hover:scale-110'} transition-transform`}
-          onClick={() => !readonly && onRate && onRate(star)}
-          onMouseEnter={() => !readonly && setHover(star)}
-          onMouseLeave={() => !readonly && setHover(0)}
-        >
-          {star <= (hover || rating) ? '⭐' : '☆'}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function MapCard({ map, onDownload, onSubscribe, isSubscribed, isDownloaded }) {
+function MapCard({ map, onDownload, onSubscribe, isSubscribed, isDownloaded, onRate }) {
   const [downloading, setDownloading] = useState(false);
 
   const handleDownload = async () => {
@@ -51,20 +37,44 @@ function MapCard({ map, onDownload, onSubscribe, isSubscribed, isDownloaded }) {
 
   return (
     <div className="bg-gray-800 rounded-xl p-4 flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <h3 className="text-white font-bold truncate flex-1">{map.name}</h3>
-        <span className="text-gray-400 text-sm">by {map.author_name}</span>
+      {/* Header */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-white font-bold truncate">{map.name}</h3>
+          <span className="text-gray-500 text-xs">by {map.author_name}</span>
+        </div>
+        <DifficultyBadge difficulty={map.difficulty} size="sm" />
       </div>
-      <p className="text-gray-400 text-sm line-clamp-2">{map.description || '暂无描述'}</p>
+      
+      <p className="text-gray-400 text-sm line-clamp-2">
+        {map.description || '暂无描述'}
+      </p>
+      
+      {/* Tags */}
       <div className="flex flex-wrap gap-1">
         {(map.tags || []).map(tag => (
-          <span key={tag} className="text-xs bg-purple-600 text-white px-2 py-0.5 rounded">{tag}</span>
+          <span key={tag} className="text-xs bg-purple-600/30 text-purple-300 px-2 py-0.5 rounded">
+            {tag}
+          </span>
         ))}
       </div>
-      <div className="flex items-center gap-3 text-sm">
-        <span className="text-yellow-400">⭐ {map.rating_avg?.toFixed(1) || '0.0'} ({map.rating_count || 0})</span>
+      
+      {/* Stats */}
+      <div className="flex items-center gap-4 text-sm">
+        <div className="flex items-center gap-1">
+          <StarRating rating={map.rating_avg || 0} readonly size="sm" />
+          <span className="text-yellow-400 font-medium">
+            {map.rating_avg?.toFixed(1) || '0.0'}
+          </span>
+          <span className="text-gray-500">({map.rating_count || 0})</span>
+        </div>
         <span className="text-gray-400">📥 {map.downloads || 0}</span>
+        {map.tile_count && (
+          <span className="text-gray-400">🎯 {map.tile_count}格</span>
+        )}
       </div>
+      
+      {/* Actions */}
       <div className="flex gap-2 mt-auto pt-2">
         <button
           onClick={handleDownload}
@@ -81,11 +91,11 @@ function MapCard({ map, onDownload, onSubscribe, isSubscribed, isDownloaded }) {
         </button>
         <button
           onClick={() => onSubscribe(map.id)}
-          className={`px-4 py-2 rounded-lg transition-colors ${
+          className={`px-3 py-2 rounded-lg transition-colors ${
             isSubscribed ? 'bg-pink-600 text-white' : 'bg-gray-700 hover:bg-gray-600 text-white'
           }`}
         >
-          {isSubscribed ? '♥ 已收藏' : '♡ 收藏'}
+          {isSubscribed ? '♥' : '♡'}
         </button>
       </div>
     </div>
@@ -96,6 +106,7 @@ function PublishModal({ type, onClose, onPublish }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
+  const [difficulty, setDifficulty] = useState(3);
   const [submitting, setSubmitting] = useState(false);
 
   const editorStore = useEditorStore();
@@ -113,8 +124,10 @@ function PublishModal({ type, onClose, onPublish }) {
         name: name.trim(),
         description: description.trim(),
         tags: tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 3),
+        difficulty,
         boardConfig,
         rulesConfig,
+        tileCount: boardConfig.length,
       });
     } else if (type === 'questions') {
       const questions = gameStore.customQuestions.length > 0 ? gameStore.customQuestions : [];
@@ -142,10 +155,11 @@ function PublishModal({ type, onClose, onPublish }) {
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-md flex flex-col gap-4">
+      <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-md flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-bold text-white">
           发布{type === 'maps' ? '地图' : type === 'questions' ? '题库' : '主题'}
         </h2>
+        
         <div>
           <label className="text-gray-300 text-sm">名称 *</label>
           <input
@@ -157,6 +171,14 @@ function PublishModal({ type, onClose, onPublish }) {
             maxLength={type === 'maps' ? 20 : 50}
           />
         </div>
+        
+        {/* Difficulty selector for maps */}
+        {type === 'maps' && (
+          <div className="bg-gray-700/50 rounded-lg p-3">
+            <DifficultySelector value={difficulty} onChange={setDifficulty} />
+          </div>
+        )}
+        
         <div>
           <label className="text-gray-300 text-sm">简介</label>
           <textarea
@@ -167,6 +189,7 @@ function PublishModal({ type, onClose, onPublish }) {
             maxLength={100}
           />
         </div>
+        
         <div>
           <label className="text-gray-300 text-sm">标签（用逗号分隔，最多3个）</label>
           <input
@@ -177,6 +200,7 @@ function PublishModal({ type, onClose, onPublish }) {
             className="w-full mt-1 bg-gray-700 text-white rounded-lg px-4 py-2"
           />
         </div>
+        
         <div className="flex gap-3 mt-2">
           <button
             onClick={onClose}
@@ -197,53 +221,6 @@ function PublishModal({ type, onClose, onPublish }) {
   );
 }
 
-function RatingModal({ item, itemType, onClose, onRate }) {
-  const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleSubmit = async () => {
-    if (!rating) return alert('请选择评分');
-    setSubmitting(true);
-    const result = await onRate({ itemId: item.id, itemType, rating, comment });
-    setSubmitting(false);
-    if (result.success) {
-      alert('评分成功！');
-      onClose();
-    } else {
-      alert(`评分失败: ${result.error}`);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-sm flex flex-col gap-4">
-        <h2 className="text-lg font-bold text-white">评分「{item.name || item.title}」</h2>
-        <div className="flex justify-center py-2">
-          <StarRating rating={rating} onRate={setRating} />
-        </div>
-        <textarea
-          value={comment}
-          onChange={e => setComment(e.target.value)}
-          placeholder="写下你的评论（选填，最多200字）..."
-          className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 h-24 resize-none"
-          maxLength={200}
-        />
-        <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2 bg-gray-700 text-white rounded-lg">取消</button>
-          <button
-            onClick={handleSubmit}
-            disabled={submitting || !rating}
-            className="flex-1 py-2 bg-yellow-500 text-black rounded-lg hover:bg-yellow-400 disabled:opacity-50 font-medium"
-          >
-            {submitting ? '提交中...' : '提交评分'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function WorkshopScreen() {
   const {
     activeTab, setActiveTab,
@@ -256,6 +233,7 @@ export default function WorkshopScreen() {
     downloadMap, downloadQuestions, downloadTheme,
     subscribe, unsubscribe,
     rateItem,
+    rateMapDifficulty,
   } = useWorkshopStore();
 
   const { goToMenu, setCurrentScreen } = useGameStore();
@@ -293,12 +271,29 @@ export default function WorkshopScreen() {
     }
   };
 
+  const handleDifficultyRate = (itemId, difficulty) => {
+    if (rateMapDifficulty) {
+      rateMapDifficulty(itemId, difficulty);
+    }
+  };
+
   const currentList = activeTab === 'maps' ? maps : activeTab === 'questions' ? questions : themes;
 
   const filteredList = currentList.filter(item => {
     if (filter === 'downloaded') return downloadedItems[item.id];
     if (filter === 'subscribed') return subscriptions.includes(item.id);
+    if (filter === 'easy') return item.difficulty && item.difficulty <= 2;
+    if (filter === 'hard') return item.difficulty && item.difficulty >= 4;
     return true;
+  });
+
+  // Sort handling
+  const sortedList = [...filteredList].sort((a, b) => {
+    if (sortBy === 'popular') return (b.downloads || 0) - (a.downloads || 0);
+    if (sortBy === 'rating') return (b.rating_avg || 0) - (a.rating_avg || 0);
+    if (sortBy === 'difficulty') return (a.difficulty || 3) - (b.difficulty || 3);
+    // recent
+    return new Date(b.created_at || 0) - new Date(a.created_at || 0);
   });
 
   const handlePlayMap = (mapData) => {
@@ -363,6 +358,22 @@ export default function WorkshopScreen() {
         </div>
       </div>
 
+      {/* Difficulty Legend */}
+      {activeTab === 'maps' && (
+        <div className="flex flex-wrap gap-2 mb-4 p-3 bg-gray-800/50 rounded-lg">
+          <span className="text-xs text-gray-400 mr-2">难度:</span>
+          {Object.entries(DIFFICULTY_LEVELS).map(([level, info]) => (
+            <span 
+              key={level}
+              className="text-xs px-2 py-1 rounded"
+              style={{ backgroundColor: info.color + '33', color: info.color }}
+            >
+              {info.label}
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* Publish Button */}
       <button
         onClick={() => setShowPublish(activeTab)}
@@ -385,13 +396,13 @@ export default function WorkshopScreen() {
             重试
           </button>
         </div>
-      ) : filteredList.length === 0 ? (
+      ) : sortedList.length === 0 ? (
         <div className="text-center py-20 text-gray-400">
           {filter !== 'all' ? '没有找到符合条件的内容' : '暂无内容，试试发布第一个作品吧！'}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredList.map(item => (
+          {sortedList.map(item => (
             <div key={item.id} className="flex flex-col gap-2">
               <MapCard
                 map={item}
@@ -447,6 +458,7 @@ export default function WorkshopScreen() {
           itemType={ratingItem.type}
           onClose={() => setRatingItem(null)}
           onRate={rateItem}
+          onDifficulty={handleDifficultyRate}
         />
       )}
     </div>

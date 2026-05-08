@@ -11,6 +11,67 @@ export const TILE_TYPES = {
   GO_TO_JAIL: 'go_to_jail',
 };
 
+// Visual tile type info for editor palette
+export const TILE_TYPE_INFO = {
+  [TILE_TYPES.PROPERTY]: { 
+    label: '房产', 
+    icon: '🏠', 
+    color: '#4CAF50',
+    description: '可购买、出售、建造房屋的地产格子'
+  },
+  [TILE_TYPES.CHANCE]: { 
+    label: '机会', 
+    icon: '🎰', 
+    color: '#9C27B0',
+    description: '随机事件，可能获得奖励或惩罚'
+  },
+  [TILE_TYPES.QUESTION]: { 
+    label: '问答', 
+    icon: '❓', 
+    color: '#2196F3',
+    description: '知识问答格子，答对获得奖励'
+  },
+  [TILE_TYPES.TAX]: { 
+    label: '税务', 
+    icon: '💰', 
+    color: '#FF5722',
+    description: '需要支付税款的格子'
+  },
+  [TILE_TYPES.GO]: { 
+    label: '起点', 
+    icon: '▶', 
+    color: '#F44336',
+    description: '游戏起点，经过时获得奖励'
+  },
+  [TILE_TYPES.JAIL]: { 
+    label: '监狱', 
+    icon: '🏠', 
+    color: '#795548',
+    description: '参观或坐牢的格子'
+  },
+  [TILE_TYPES.FREE_PARKING]: { 
+    label: '休息站', 
+    icon: '☁', 
+    color: '#607D8B',
+    description: '免费停留的格子'
+  },
+  [TILE_TYPES.GO_TO_JAIL]: { 
+    label: '入狱', 
+    icon: '⚠', 
+    color: '#E91E63',
+    description: '直接前往监狱'
+  },
+};
+
+// Workshop difficulty levels
+export const DIFFICULTY_LEVELS = {
+  1: { label: '⭐ 入门', color: '#4CAF50', description: '适合新手，教学导向' },
+  2: { label: '⭐⭐ 简单', color: '#8BC34A', description: '轻度挑战，娱乐为主' },
+  3: { label: '⭐⭐⭐ 中等', color: '#FFC107', description: '平衡难度，适合大多数玩家' },
+  4: { label: '⭐⭐⭐⭐ 困难', color: '#FF9800', description: '高难度，需要策略思维' },
+  5: { label: '⭐⭐⭐⭐⭐ 地狱', color: '#F44336', description: '极限挑战，高手专属' },
+};
+
 export const BOARD_SIZES = {
   16: { label: '4×4 (16格)', tiles: 16, sides: 4, tilesPerSide: 4 },
   24: { label: '6×4 (24格)', tiles: 24, sides: 4, tilesPerSide: 6 },
