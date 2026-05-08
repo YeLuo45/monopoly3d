@@ -1,7 +1,8 @@
 /**
  * Multiplayer Module Exports
- * 
+ *
  * Online multiplayer system using Supabase Realtime
+ * Includes workshop/creative workshop system
  */
 
 export { supabase, isSupabaseConfigured } from './supabaseClient';

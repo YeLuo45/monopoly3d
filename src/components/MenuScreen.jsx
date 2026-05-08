@@ -368,6 +368,13 @@ export default function MenuScreen() {
         >
           👤 玩家档案
         </button>
+
+        <button
+          onClick={useGameStore.getState().goToWorkshop}
+          className="px-8 py-4 bg-gradient-to-r from-pink-600 to-rose-600 rounded-xl text-xl font-bold shadow-lg hover:scale-105 transition-all"
+        >
+          🎨 创意工坊
+        </button>
         
         <button
           onClick={() => {

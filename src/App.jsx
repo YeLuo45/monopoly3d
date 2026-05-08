@@ -8,6 +8,7 @@ import PieceSelectionScreen from './components/PieceSelectionScreen';
 import GameBoard from './components/GameBoard';
 import GameOverScreen from './components/GameOverScreen';
 import ProfileScreen from './components/ProfileScreen';
+import WorkshopScreen from './components/WorkshopScreen';
 import TeacherConsole from './components/TeacherConsole';
 import FloatingEffects from './components/FloatingEffects';
 import EditorPage from './editor/EditorPage';
@@ -118,6 +119,7 @@ function App() {
       )}
       {screen === 'gameover' && <GameOverScreen />}
       {screen === 'profile' && <ProfileScreen />}
+      {screen === 'workshop' && <WorkshopScreen />}
       {/* Achievement System - Overlays */}
       <AchievementPopup />
       <AchievementPanel />

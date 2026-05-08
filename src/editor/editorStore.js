@@ -257,6 +257,19 @@ const useEditorStore = create((set, get) => ({
     const { tiles, rules } = get();
     return { tiles, rules };
   },
+
+  // Load tiles + rules from workshop/external config
+  loadFromConfig: (boardConfig, rulesConfig) => {
+    if (!boardConfig) return false;
+    get().saveToHistory();
+    set({
+      tiles: boardConfig,
+      boardSize: boardConfig.length,
+      rules: rulesConfig ? { ...get().rules, ...rulesConfig } : get().rules,
+      selectedTileIndex: null,
+    });
+    return true;
+  },
 }));
 
 export default useEditorStore;
