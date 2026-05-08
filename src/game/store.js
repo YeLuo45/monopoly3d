@@ -59,7 +59,7 @@ const ALL_CATEGORIES = ['math', 'shape', 'time', 'geography', 'science', 'readin
 
 const initialState = {
   // Screen state
-  screen: 'menu', // menu | setup | piece_selection | playing | gameover
+  screen: 'menu', // menu | setup | piece_selection | playing | gameover | profile
 
   // Game settings
   ageTier: 'kindergarten', // kindergarten | primary1_2 | primary3_4
@@ -139,6 +139,8 @@ export const useGameStore = create((set, get) => ({
   goToEditor: () => set({ screen: 'editor' }),
 
   goToTeacherPage: () => set({ screen: 'teacher_page' }),
+
+  goToProfile: () => set({ screen: 'profile' }),
 
   // Student ID management
   setStudentId: (id) => {
@@ -306,6 +308,99 @@ export const useGameStore = create((set, get) => ({
 
     localStorage.setItem('monopoly3d_student_profiles', JSON.stringify(profiles));
     return gameRecord;
+  },
+
+  // Player profile update at game end - records result, updates XP/level, AI battle record, wrong answers
+  playerProfile: (gameResult) => {
+    const state = get();
+    const studentId = state.studentId || 'anonymous';
+    const achievementStore = require('../features/achievement/achievementStore').useAchievementStore.getState();
+    
+    // Calculate game stats
+    const questionsAnswered = state.gameStats.questionsAnswered || [];
+    const totalQuestions = questionsAnswered.length;
+    const correctQuestions = questionsAnswered.filter(q => q.correct).length;
+    const wrongQuestions = questionsAnswered.filter(q => !q.correct);
+    
+    // Determine rank
+    const rankedPlayers = [...state.players].sort((a, b) => {
+      const netA = a.money + a.properties.reduce((sum, pid) => sum + 100, 0);
+      const netB = b.money + b.properties.reduce((sum, pid) => sum + 100, 0);
+      return netB - netA;
+    });
+    const humanPlayers = rankedPlayers.filter(p => !p.isAI);
+    const playerRank = humanPlayers.length > 0 ? humanPlayers.findIndex(p => p.id === state.players[0]?.id) + 1 : 1;
+    const isWinner = playerRank === 1;
+    
+    // Calculate XP earned (based on performance)
+    const xpEarned = Math.round(
+      (correctQuestions * 10) + // 10 XP per correct answer
+      (isWinner ? 50 : 0) +     // Bonus for winning
+      (state.gameStats.propertiesBought?.length || 0) * 5 // 5 XP per property
+    );
+    
+    // Update achievement store profile stats
+    achievementStore.incrementStat('gamesPlayed');
+    if (isWinner) {
+      achievementStore.incrementStat('wins');
+    }
+    achievementStore.incrementStat('totalQuestionsAnswered', totalQuestions);
+    achievementStore.incrementStat('totalCorrectAnswers', correctQuestions);
+    achievementStore.incrementStat('propertiesBought', state.gameStats.propertiesBought?.length || 0);
+    
+    // Update category stats for wrong answers
+    wrongQuestions.forEach(q => {
+      achievementStore.updateCategoryStats(q.category, false);
+    });
+    
+    // Update AI battle record
+    const aiCount = state.players.filter(p => p.isAI).length;
+    if (aiCount > 0) {
+      // This is stored in localStorage student_profiles
+      const profilesJson = localStorage.getItem('monopoly3d_student_profiles');
+      const profiles = profilesJson ? JSON.parse(profilesJson) : {};
+      if (!profiles[studentId]) {
+        profiles[studentId] = { name: studentId, games: [], aiBattles: { wins: 0, losses: 0 } };
+      }
+      if (!profiles[studentId].aiBattles) {
+        profiles[studentId].aiBattles = { wins: 0, losses: 0 };
+      }
+      if (isWinner) {
+        profiles[studentId].aiBattles.wins++;
+      } else {
+        profiles[studentId].aiBattles.losses++;
+      }
+      localStorage.setItem('monopoly3d_student_profiles', JSON.stringify(profiles));
+    }
+    
+    // Record wrong answers for review
+    if (wrongQuestions.length > 0) {
+      const wrongAnswersJson = localStorage.getItem('monopoly3d_wrong_answers');
+      const wrongAnswers = wrongAnswersJson ? JSON.parse(wrongAnswersJson) : {};
+      if (!wrongAnswers[studentId]) {
+        wrongAnswers[studentId] = [];
+      }
+      // Add new wrong answers (keep last 50)
+      wrongAnswers[studentId] = [
+        ...wrongAnswers[studentId],
+        ...wrongQuestions.map(q => ({
+          ...q,
+          timestamp: Date.now(),
+          gameDate: new Date().toISOString(),
+        }))
+      ].slice(-50);
+      localStorage.setItem('monopoly3d_wrong_answers', JSON.stringify(wrongAnswers));
+    }
+    
+    // Sync profile stats from game store
+    achievementStore.syncProfileStats({
+      gamesPlayed: (achievementStore.profileStats.gamesPlayed || 0) + 1,
+      wins: isWinner ? (achievementStore.profileStats.wins || 0) + 1 : achievementStore.profileStats.wins || 0,
+      totalQuestionsAnswered: (achievementStore.profileStats.totalQuestionsAnswered || 0) + totalQuestions,
+      totalCorrectAnswers: (achievementStore.profileStats.totalCorrectAnswers || 0) + correctQuestions,
+    });
+    
+    return { xpEarned, rank: playerRank, isWinner };
   },
 
   // Multiplayer actions
@@ -863,6 +958,7 @@ toggleTeacherMode: () => set(s => ({ teacherMode: !s.teacherMode })),
       // Finalize and save game stats
       get().finalizeGameStats();
       get().saveGameStatsToProfile();
+      get().playerProfile(); // Update profile: XP/level, AI battle record, wrong answers
       set({ winner, phase: 'game_over', screen: 'gameover' });
       return;
     }
@@ -889,6 +985,7 @@ toggleTeacherMode: () => set(s => ({ teacherMode: !s.teacherMode })),
       // Finalize and save game stats
       get().finalizeGameStats();
       get().saveGameStatsToProfile();
+      get().playerProfile(); // Update profile: XP/level, AI battle record, wrong answers
       set({ winner, phase: 'game_over', screen: 'gameover' });
     }
   },

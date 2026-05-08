@@ -4,6 +4,7 @@ import { AchievementPanel, useAchievementStore } from '../features/achievement';
 import { OnlineLobby } from '../multiplayer';
 
 export default function MenuScreen() {
+  const goToProfile = useGameStore(s => s.goToProfile);
   const goToSetup = useGameStore(s => s.goToSetup);
   const goToEditor = useGameStore(s => s.goToEditor);
   const goToTeacherPage = useGameStore(s => s.goToTeacherPage);
@@ -359,6 +360,13 @@ export default function MenuScreen() {
           className="px-8 py-4 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-xl text-xl font-bold shadow-lg hover:shadow-yellow-500/50 hover:scale-105 transition-all"
         >
           🏆 成就中心
+        </button>
+
+        <button
+          onClick={goToProfile}
+          className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl text-xl font-bold shadow-lg hover:scale-105 transition-all"
+        >
+          👤 玩家档案
         </button>
         
         <button
