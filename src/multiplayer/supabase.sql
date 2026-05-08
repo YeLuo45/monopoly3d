@@ -60,6 +60,17 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Replays table
+CREATE TABLE IF NOT EXISTS replays (
+  id VARCHAR(50) PRIMARY KEY,
+  room_id UUID REFERENCES rooms(id) ON DELETE SET NULL,
+  room_code VARCHAR(6) NOT NULL,
+  duration INTEGER DEFAULT 0,
+  event_count INTEGER DEFAULT 0,
+  events JSONB DEFAULT '[]',
+  recorded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- ============================================
 -- INDEXES
 -- ============================================
@@ -72,6 +83,8 @@ CREATE INDEX IF NOT EXISTS idx_game_events_room_id ON game_events(room_id);
 CREATE INDEX IF NOT EXISTS idx_game_events_created ON game_events(created_at);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_room_id ON chat_messages(room_id);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_created ON chat_messages(created_at);
+CREATE INDEX IF NOT EXISTS idx_replays_room_code ON replays(room_code);
+CREATE INDEX IF NOT EXISTS idx_replays_recorded_at ON replays(recorded_at);
 
 -- ============================================
 -- FUNCTIONS
@@ -180,6 +193,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE rooms;
 ALTER PUBLICATION supabase_realtime ADD TABLE players;
 ALTER PUBLICATION supabase_realtime ADD TABLE game_events;
 ALTER PUBLICATION supabase_realtime ADD TABLE chat_messages;
+ALTER PUBLICATION supabase_realtime ADD TABLE replays;
 
 -- ============================================
 -- ROW LEVEL SECURITY (optional, for production)
@@ -197,3 +211,4 @@ CREATE POLICY "Allow all on rooms" ON rooms FOR ALL USING (true);
 CREATE POLICY "Allow all on players" ON players FOR ALL USING (true);
 CREATE POLICY "Allow all on game_events" ON game_events FOR ALL USING (true);
 CREATE POLICY "Allow all on chat_messages" ON chat_messages FOR ALL USING (true);
+CREATE POLICY "Allow all on replays" ON replays FOR ALL USING (true);

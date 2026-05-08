@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useGameStore } from '../game/store';
+import { useMultiplayerStore } from '../multiplayer/multiplayerStore';
 import { AchievementPanel, useAchievementStore } from '../features/achievement';
 import { OnlineLobby } from '../multiplayer';
 
@@ -25,6 +26,11 @@ export default function MenuScreen() {
   const [joinCode, setJoinCode] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionError, setConnectionError] = useState('');
+  
+  // Replay state
+  const [showReplayList, setShowReplayList] = useState(false);
+  const [replayList, setReplayList] = useState([]);
+  const [isLoadingReplays, setIsLoadingReplays] = useState(false);
   
   // Check for existing student ID on mount
   useEffect(() => {
@@ -111,6 +117,49 @@ export default function MenuScreen() {
     const store = useGameStore.getState();
     store.setPlayers(1, 0, []); // Start with 1 human in multiplayer
     setShowOnlineMultiplayer(false);
+  };
+
+  const handleLoadReplay = async (replay) => {
+    try {
+      const { loadReplay, initialize } = useMultiplayerStore.getState();
+      
+      // Initialize if needed
+      await initialize();
+      
+      // Load the replay
+      await loadReplay(replay.id);
+      
+      // Transition to replay playback
+      const store = useGameStore.getState();
+      store.setPlayers(1, 0, []); // Placeholder
+      setShowReplayList(false);
+      
+      // Note: The actual replay playback would need to be handled by a ReplayScreen
+      alert(`回放已加载: ${replay.room_code}\n持续时间: ${Math.round(replay.duration / 1000)}秒\n事件数: ${replay.event_count}`);
+    } catch (err) {
+      console.error('Load replay failed:', err);
+      alert('加载回放失败: ' + err.message);
+    }
+  };
+
+  const handleShowReplayList = async () => {
+    setShowReplayList(true);
+    setIsLoadingReplays(true);
+    try {
+      const { getReplayList, initialize } = useMultiplayerStore.getState();
+      await initialize();
+      const replays = await getReplayList();
+      setReplayList(replays);
+    } catch (err) {
+      console.error('Get replay list failed:', err);
+      setReplayList([]);
+    }
+    setIsLoadingReplays(false);
+  };
+
+  const handleCloseReplayList = () => {
+    setShowReplayList(false);
+    setReplayList([]);
   };
   
   const handleStartMultiplayerGame = () => {
@@ -328,6 +377,13 @@ export default function MenuScreen() {
         </button>
         
         <button
+          onClick={handleShowReplayList}
+          className="px-8 py-4 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl text-xl font-bold shadow-lg hover:shadow-purple-500/50 hover:scale-105 transition-all"
+        >
+          📹 查看回放
+        </button>
+        
+        <button
           onClick={() => setShowLANMultiplayerMenu(true)}
           className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl text-xl font-bold shadow-lg hover:shadow-cyan-500/50 hover:scale-105 transition-all"
         >
@@ -400,6 +456,73 @@ export default function MenuScreen() {
       {/* Achievement Panel Modal */}
       {showAchievementPanel && (
         <AchievementPanel onClose={() => setShowAchievementPanel(false)} />
+      )}
+      
+      {/* Replay List Modal */}
+      {showReplayList && (
+        <div className="flex flex-col items-center justify-center h-screen text-white">
+          <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-3xl p-8 max-w-2xl w-full mx-4 border border-purple-500/30 max-h-[80vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="text-center flex-1">
+                <div className="text-4xl mb-2">📹</div>
+                <h2 className="text-xl font-bold">游戏回放</h2>
+              </div>
+              <button
+                onClick={handleCloseReplayList}
+                className="text-gray-400 hover:text-white text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {/* Replay List */}
+            <div className="flex-1 overflow-y-auto">
+              {isLoadingReplays ? (
+                <div className="text-center text-gray-400 py-8">
+                  加载中...
+                </div>
+              ) : replayList.length === 0 ? (
+                <div className="text-center text-gray-400 py-8">
+                  <div className="text-4xl mb-2">📭</div>
+                  <p>暂无回放记录</p>
+                  <p className="text-sm mt-1">完成游戏后会自动保存回放</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {replayList.map((replay) => (
+                    <div
+                      key={replay.id}
+                      className="bg-black/30 rounded-xl p-4 border border-purple-500/30 hover:border-purple-400/50 transition-all"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-yellow-400 font-bold tracking-wider">
+                              {replay.room_code}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {new Date(replay.recorded_at).toLocaleDateString('zh-CN')}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-400 mt-1">
+                            持续 {Math.round(replay.duration / 1000)}秒 · {replay.event_count} 个事件
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleLoadReplay(replay)}
+                          className="text-xs px-3 py-1 bg-purple-500/50 hover:bg-purple-500 rounded-lg"
+                        >
+                          ▶️ 播放
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

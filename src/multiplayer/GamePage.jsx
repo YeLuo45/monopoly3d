@@ -34,6 +34,12 @@ export default function GamePage({ isOnline = false }) {
     playerId,
     onGameEvent,
     onGameStart,
+    isSpectator,
+    isHost: isOnlineHost,
+    isRecordingReplay,
+    startReplayRecording,
+    stopReplayRecording,
+    recordReplayEvent,
   } = useMultiplayerStore();
   
   // Determine current player ID based on mode
@@ -41,8 +47,13 @@ export default function GamePage({ isOnline = false }) {
     ? onlinePlayers[currentPlayerIndex]?.player_id 
     : players[currentPlayerIndex]?.id;
   
-  // Check if it's local player's turn
+  // Check if it's local player's turn (or if spectator, never my turn)
   useEffect(() => {
+    if (isSpectator) {
+      setIsMyTurn(false);
+      return;
+    }
+    
     if (!isOnline) {
       const localPlayer = players.find(p => !p.isAI);
       setIsMyTurn(currentPlayerId === localPlayer?.id);
@@ -54,7 +65,7 @@ export default function GamePage({ isOnline = false }) {
     if (myPlayer) {
       setIsMyTurn(currentPlayerId === myPlayer.player_id);
     }
-  }, [currentPlayerIndex, currentPlayerId, isOnline, players, onlinePlayers]);
+  }, [currentPlayerIndex, currentPlayerId, isOnline, players, onlinePlayers, isSpectator]);
   
   // Set up multiplayer callbacks
   useEffect(() => {
@@ -98,9 +109,13 @@ export default function GamePage({ isOnline = false }) {
         if (screen !== 'playing') {
           useGameStore.setState({ screen: 'playing' });
         }
+        // Start replay recording when game starts (host only)
+        if (isOnlineHost && !isRecordingReplay) {
+          startReplayRecording();
+        }
       },
     });
-  }, [isOnline, screen, currentPlayerIndex, players.length]);
+  }, [isOnline, screen, currentPlayerIndex, players.length, isOnlineHost, isRecordingReplay, startReplayRecording]);
   
   // Sync game state when receiving updates
   useEffect(() => {

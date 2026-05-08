@@ -32,6 +32,7 @@ export default function OnlineLobby({ onBack, onGameStart }) {
     initialize,
     createRoom,
     joinRoom,
+    joinAsSpectator,
     leaveRoom,
     setReady,
     startGame,
@@ -85,12 +86,35 @@ export default function OnlineLobby({ onBack, onGameStart }) {
     }
     setIsLoading(false);
   };
+
+  const handleSpectateRoom = async (code) => {
+    if (!code || code.length !== 6) {
+      alert('请输入6位房间码');
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const result = await joinAsSpectator(code);
+      setMode('spectate');
+      return result;
+    } catch (err) {
+      console.error('Spectate room failed:', err);
+      alert(err.message || '旁观失败');
+    }
+    setIsLoading(false);
+  };
   
   const handleLeaveRoom = () => {
     leaveRoom();
     setMode(null);
   };
-  
+
+  const handleExitSpectator = () => {
+    useMultiplayerStore.getState().exitSpectatorMode();
+    setMode(null);
+  };
+
   const handleReady = () => {
     const myPlayer = players.find(p => p.isSelf);
     setReady(!myPlayer?.is_ready);
@@ -272,6 +296,76 @@ export default function OnlineLobby({ onBack, onGameStart }) {
     );
   }
   
+  // Spectator view
+  if (mode === 'spectate') {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen text-white p-4">
+        <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-3xl p-8 max-w-lg w-full border border-purple-500/30">
+          {/* Spectator Header */}
+          <div className="text-center mb-6">
+            <div className="text-purple-400 text-sm mb-1">👁️ 旁观模式</div>
+            <div className="text-xs text-gray-400 mb-2">房间码</div>
+            <div className="text-4xl font-bold tracking-widest text-purple-400 mb-2">
+              {roomCode}
+            </div>
+            <div className="text-gray-400 text-sm">
+              {players.length} / {currentRoom?.max_players || 6} 人
+            </div>
+          </div>
+          
+          {/* Spectator Notice */}
+          <div className="bg-purple-900/50 rounded-xl p-4 mb-4 text-center">
+            <p className="text-purple-300 text-sm mb-2">
+              你正在旁观此游戏
+            </p>
+            <p className="text-gray-400 text-xs">
+              你可以看到所有玩家的操作，但无法进行任何操作
+            </p>
+          </div>
+          
+          {/* Players List (Read-only) */}
+          <div className="bg-black/30 rounded-xl p-4 mb-4">
+            <h3 className="text-sm font-bold text-purple-300 mb-3">玩家列表</h3>
+            <div className="space-y-2">
+              {players.map((player, index) => (
+                <div
+                  key={player.id}
+                  className="flex items-center justify-between p-2 rounded-lg bg-black/20"
+                >
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: player.color }}
+                    />
+                    <span className={player.isSelf ? 'text-purple-400' : ''}>
+                      {player.name}
+                      {player.isSelf && ' (你-旁观)'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {player.is_online ? (
+                      <span className="text-green-400 text-sm">🟢 在线</span>
+                    ) : (
+                      <span className="text-gray-500 text-sm">⚫ 离线</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Exit Spectator */}
+          <button
+            onClick={handleExitSpectator}
+            className="w-full px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold transition-all"
+          >
+            退出旁观
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
   // Main menu
   return (
     <div className="flex flex-col items-center justify-center h-screen text-white p-4">
@@ -340,6 +434,20 @@ export default function OnlineLobby({ onBack, onGameStart }) {
           >
             🔍 浏览房间
           </button>
+          
+          {/* Spectate by Code */}
+          <div className="text-center text-gray-500 my-2">或者</div>
+          
+          <button
+            onClick={() => {
+              const code = prompt('请输入要旁观的房间码:');
+              if (code) handleSpectateRoom(code);
+            }}
+            disabled={!isConnected}
+            className="w-full px-6 py-4 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl font-bold text-lg hover:scale-105 transition-all disabled:opacity-50"
+          >
+            👁️ 旁观房间
+          </button>
         </div>
         
         {/* Room Browser */}
@@ -348,6 +456,10 @@ export default function OnlineLobby({ onBack, onGameStart }) {
             <RoomBrowser
               onJoin={(code) => handleJoinRoom(code)}
               onBack={() => setMode(null)}
+              onSpectate={(code) => {
+                setMode(null);
+                handleSpectateRoom(code);
+              }}
             />
           </div>
         )}

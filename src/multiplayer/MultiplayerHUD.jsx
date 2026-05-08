@@ -26,6 +26,7 @@ export default function MultiplayerHUD({ currentPlayerIndex = 0, isMyTurn = fals
     clearUnreadChat,
     sendChatMessage,
     playerName,
+    isSpectator,
   } = useMultiplayerStore();
   
   // Turn timer
@@ -125,15 +126,22 @@ export default function MultiplayerHUD({ currentPlayerIndex = 0, isMyTurn = fals
           <div className={`bg-black/70 backdrop-blur-sm rounded-xl p-3 ${
             isMyTurn ? 'bg-yellow-600/30 border border-yellow-500/50' : ''
           }`}>
-            <div className="text-xs text-gray-400 mb-1">当前回合</div>
+            <div className="text-xs text-gray-400 mb-1">
+              当前回合
+            </div>
             <div className={`font-bold ${
               isMyTurn ? 'text-yellow-400' : 'text-white'
             }`}>
               {players[currentPlayerIndex]?.name || '未知'}
             </div>
-            {isMyTurn && (
+            {isMyTurn && !isSpectator && (
               <div className="text-xs text-yellow-400 mt-1">
                 ⏱️ {timeLeft}s
+              </div>
+            )}
+            {isSpectator && (
+              <div className="text-xs text-purple-400 mt-1">
+                👁️ 旁观中
               </div>
             )}
           </div>
@@ -145,20 +153,29 @@ export default function MultiplayerHUD({ currentPlayerIndex = 0, isMyTurn = fals
             <span className="text-red-400 text-xs">👑 房主</span>
           </div>
         )}
+        
+        {/* Spectator Badge */}
+        {isSpectator && (
+          <div className="bg-purple-900/50 backdrop-blur-sm rounded-xl px-3 py-2 text-center">
+            <span className="text-purple-400 text-xs">👁️ 旁观模式</span>
+          </div>
+        )}
       </div>
       
-      {/* Chat Toggle Button */}
-      <button
-        onClick={() => setShowChat(!showChat)}
-        className="absolute bottom-4 right-4 z-40 px-4 py-2 bg-black/70 backdrop-blur-sm rounded-xl text-white flex items-center gap-2 hover:bg-black/80 transition-all"
-      >
-        💬 聊天
-        {unreadChatCount > 0 && (
-          <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-            {unreadChatCount > 9 ? '9+' : unreadChatCount}
-          </span>
-        )}
-      </button>
+      {/* Chat Toggle Button - Hidden for spectators */}
+      {!isSpectator && (
+        <button
+          onClick={() => setShowChat(!showChat)}
+          className="absolute bottom-4 right-4 z-40 px-4 py-2 bg-black/70 backdrop-blur-sm rounded-xl text-white flex items-center gap-2 hover:bg-black/80 transition-all"
+        >
+          💬 聊天
+          {unreadChatCount > 0 && (
+            <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              {unreadChatCount > 9 ? '9+' : unreadChatCount}
+            </span>
+          )}
+        </button>
+      )}
       
       {/* Chat Panel */}
       {showChat && (

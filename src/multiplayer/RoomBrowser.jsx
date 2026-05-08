@@ -8,7 +8,7 @@
 import { useState, useEffect } from 'react';
 import { useMultiplayerStore } from './multiplayerStore';
 
-export default function RoomBrowser({ onJoin, onBack }) {
+export default function RoomBrowser({ onJoin, onBack, onSpectate }) {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRoom, setSelectedRoom] = useState(null);
   
@@ -32,6 +32,11 @@ export default function RoomBrowser({ onJoin, onBack }) {
   const handleJoin = (room) => {
     setSelectedRoom(room);
     onJoin(room.code);
+  };
+
+  const handleSpectate = (room) => {
+    if (room.status !== 'playing') return;
+    onSpectate?.(room.code);
   };
   
   const formatTime = (timestamp) => {
@@ -89,6 +94,13 @@ export default function RoomBrowser({ onJoin, onBack }) {
                     {room.host_id && (
                       <span className="text-xs text-red-400">👑</span>
                     )}
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${
+                      room.status === 'waiting' ? 'bg-green-500/30 text-green-400' :
+                      room.status === 'playing' ? 'bg-blue-500/30 text-blue-400' :
+                      'bg-gray-500/30 text-gray-400'
+                    }`}>
+                      {room.status === 'waiting' ? '等待中' : room.status === 'playing' ? '游戏中' : '已结束'}
+                    </span>
                   </div>
                   <div className="text-xs text-gray-400 mt-1">
                     {formatTime(room.created_at)}
@@ -99,13 +111,24 @@ export default function RoomBrowser({ onJoin, onBack }) {
                     <span className="text-green-400">{room.playerCount || 0}</span>
                     <span className="text-gray-500"> / {room.max_players}</span>
                   </div>
-                  <button
-                    onClick={() => handleJoin(room)}
-                    disabled={room.playerCount >= room.max_players}
-                    className="text-xs px-3 py-1 bg-blue-500/50 hover:bg-blue-500 rounded-lg mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    加入
-                  </button>
+                  <div className="flex gap-1 mt-1">
+                    {room.status === 'playing' && (
+                      <button
+                        onClick={() => handleSpectate(room)}
+                        className="text-xs px-2 py-1 bg-purple-500/50 hover:bg-purple-500 rounded-lg"
+                        title="旁观游戏"
+                      >
+                        👁️ 旁观
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleJoin(room)}
+                      disabled={room.playerCount >= room.max_players}
+                      className="text-xs px-3 py-1 bg-blue-500/50 hover:bg-blue-500 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      加入
+                    </button>
+                  </div>
                 </div>
               </div>
               {room.settings && (
