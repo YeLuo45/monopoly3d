@@ -15,7 +15,7 @@ import EditorPage from './editor/EditorPage';
 import './index.css';
 
 // Achievement System
-import { AchievementPopup, TaskProgress, WeatherIndicator, Leaderboard, AchievementPanel } from './features/achievement';
+import { AchievementPopup, TaskProgress, WeatherIndicator, LeaderboardPanel, AchievementPanel, DailyChallengeScreen } from './features/achievement';
 
 // Teaching Tools
 import { TeacherPage, StudentHomeworkPanel } from './features/teaching';
@@ -130,6 +130,8 @@ function App() {
       {/* Achievement System - Overlays */}
       <AchievementPopup />
       <AchievementPanel />
+      <DailyChallengeScreen />
+      <LeaderboardPanel />
     </div>
   );
 }
