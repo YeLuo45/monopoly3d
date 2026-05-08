@@ -26,6 +26,127 @@ const CATEGORY_ICONS = {
   animal: '🐾',
 };
 
+// AI Learning Stats Content Component
+function AIStatsContent() {
+  const [aiStats, setAiStats] = useState({});
+  const [recentDecisions, setRecentDecisions] = useState([]);
+
+  useEffect(() => {
+    const stats = useGameStore.getState().getAILearningStats();
+    setAiStats(stats);
+    setRecentDecisions(stats.recentDecisions || []);
+  }, []);
+
+  const handleReset = () => {
+    if (useGameStore.getState().resetAILearning()) {
+      setAiStats({ totalDecisions: 0, buyDecisions: 0, passDecisions: 0, buildDecisions: 0, errorRate: 0 });
+      setRecentDecisions([]);
+    }
+  };
+
+  const getDecisionIcon = (type) => {
+    switch (type) {
+      case 'buy': return '🏠';
+      case 'pass': return '⏭️';
+      case 'build': return '🏗️';
+      case 'trade': return '🔄';
+      default: return '❓';
+    }
+  };
+
+  const getDecisionColor = (decision) => {
+    if (decision.outcome === 'good') return 'text-green-400';
+    if (decision.outcome === 'bad') return 'text-red-400';
+    return 'text-gray-300';
+  };
+
+  const formatTime = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  return (
+    <>
+      {/* Stats Overview */}
+      <div className="bg-gray-800/50 rounded-xl p-6">
+        <h3 className="text-xl font-bold mb-6 text-center">🧠 AI学习进度</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-gray-900/50 rounded-xl p-4 text-center">
+            <div className="text-4xl mb-2">📝</div>
+            <div className="text-3xl font-bold text-white">{aiStats.totalDecisions || 0}</div>
+            <div className="text-gray-400 text-sm">总决策数</div>
+          </div>
+          <div className="bg-gray-900/50 rounded-xl p-4 text-center">
+            <div className="text-4xl mb-2">🏠</div>
+            <div className="text-3xl font-bold text-blue-400">{aiStats.buyDecisions || 0}</div>
+            <div className="text-gray-400 text-sm">购房决策</div>
+          </div>
+          <div className="bg-gray-900/50 rounded-xl p-4 text-center">
+            <div className="text-4xl mb-2">🏗️</div>
+            <div className="text-3xl font-bold text-purple-400">{aiStats.buildDecisions || 0}</div>
+            <div className="text-gray-400 text-sm">建屋决策</div>
+          </div>
+          <div className="bg-gray-900/50 rounded-xl p-4 text-center">
+            <div className="text-4xl mb-2">⚠️</div>
+            <div className="text-3xl font-bold text-red-400">{aiStats.errorRate || 0}%</div>
+            <div className="text-gray-400 text-sm">决策错误率</div>
+          </div>
+        </div>
+        
+        {/* Reset Button */}
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={handleReset}
+            className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 rounded-xl font-bold hover:scale-105 transition-all"
+          >
+            🗑️ 重置AI学习数据
+          </button>
+        </div>
+      </div>
+
+      {/* Recent Decisions */}
+      <div className="bg-gray-800/50 rounded-xl p-6">
+        <h3 className="text-lg font-bold mb-4">📋 最近决策记录</h3>
+        {recentDecisions.length === 0 ? (
+          <div className="text-center text-gray-400 py-8">
+            <div className="text-5xl mb-4">📭</div>
+            <p>暂无决策记录</p>
+            <p className="text-sm mt-2">开始游戏让AI做出决策吧！</p>
+          </div>
+        ) : (
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {recentDecisions.map((decision, idx) => (
+              <div 
+                key={idx} 
+                className={`bg-gray-900/50 rounded-lg p-3 flex items-center justify-between ${getDecisionColor(decision)}`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{getDecisionIcon(decision.type)}</span>
+                  <div>
+                    <div className="font-bold">
+                      {decision.type === 'buy' && `购房: ${decision.tileName || '未知'}`}
+                      {decision.type === 'pass' && '跳过购买'}
+                      {decision.type === 'build' && `建屋: ${decision.tileName || '未知'}`}
+                      {decision.type === 'trade' && '交易'}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      玩家资金: ¥{decision.playerMoney} | 位置: {decision.playerPosition}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-bold">{decision.decision?.toUpperCase()}</div>
+                  <div className="text-xs text-gray-500">{formatTime(decision.timestamp)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 // Calculate level from games played
 function calculateLevel(gamesPlayed) {
   if (gamesPlayed >= 100) return { level: 10, title: '传奇玩家', progress: 100 };
@@ -213,6 +334,7 @@ export default function ProfileScreen() {
             { id: 'history', label: '📜 游戏记录' },
             { id: 'wrong', label: '📖 错题本' },
             { id: 'ai', label: '🤖 AI对战' },
+            { id: 'ai_stats', label: '🧠 AI战绩' },
             { id: 'settings', label: '⚙️ 设置' },
           ].map(tab => (
             <button
@@ -388,6 +510,13 @@ export default function ProfileScreen() {
             {aiBattleRecord.total === 0 && (
               <p className="text-center text-gray-400">开始游戏来积累AI对战记录吧！</p>
             )}
+          </div>
+        )}
+
+        {/* AI Learning Stats Tab */}
+        {activeTab === 'ai_stats' && (
+          <div className="space-y-4">
+            <AIStatsContent />
           </div>
         )}
 

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameStore } from '../game/store';
-import { AI_DIFFICULTY } from '../game/aiBrain';
+import { AI_DIFFICULTY, getAdaptiveAIStatus } from '../game/aiBrain';
 import { THEMES, BOARD_THEMES } from '../game/themes';
 
 const CATEGORY_LABELS = {
@@ -19,6 +19,7 @@ const DIFFICULTY_OPTIONS = [
   { key: AI_DIFFICULTY.EASY, label: '简单', color: 'bg-green-600' },
   { key: AI_DIFFICULTY.NORMAL, label: '普通', color: 'bg-yellow-600' },
   { key: AI_DIFFICULTY.HARD, label: '困难', color: 'bg-red-600' },
+  { key: AI_DIFFICULTY.ADAPTIVE, label: '自适应', color: 'bg-blue-600' },
 ];
 
 export default function SetupScreen() {
@@ -34,6 +35,13 @@ export default function SetupScreen() {
   const [humanCount, setHumanCount] = useState(1);
   const [aiCount, setAiCount] = useState(1);
   const [aiDifficulties, setAiDifficulties] = useState([AI_DIFFICULTY.NORMAL]);
+  const [adaptiveStatus, setAdaptiveStatus] = useState(null);
+
+  // Load adaptive AI status on mount
+  useEffect(() => {
+    const status = getAdaptiveAIStatus();
+    setAdaptiveStatus(status);
+  }, []);
 
   // Update AI difficulties when aiCount changes
   const handleAiCountChange = (newCount) => {
@@ -179,6 +187,39 @@ export default function SetupScreen() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Adaptive AI Status Display */}
+      {aiCount > 0 && aiDifficulties.includes(AI_DIFFICULTY.ADAPTIVE) && adaptiveStatus && (
+        <div className="mb-8 w-96">
+          <h3 className="text-xl mb-4 text-blue-200">🧠 自适应AI状态</h3>
+          <div className="bg-blue-900/30 border border-blue-500/50 rounded-xl p-4">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="bg-black/30 rounded-lg p-2">
+                <div className="text-gray-400">已玩游戏局数</div>
+                <div className="text-2xl font-bold text-blue-400">{adaptiveStatus.gamesPlayed}</div>
+              </div>
+              <div className="bg-black/30 rounded-lg p-2">
+                <div className="text-gray-400">玩家胜率</div>
+                <div className="text-2xl font-bold text-green-400">{adaptiveStatus.playerWinRate}%</div>
+              </div>
+              <div className="bg-black/30 rounded-lg p-2">
+                <div className="text-gray-400">玩家答题准确率</div>
+                <div className="text-2xl font-bold text-purple-400">{adaptiveStatus.playerAccuracy}%</div>
+              </div>
+              <div className="bg-black/30 rounded-lg p-2">
+                <div className="text-gray-400">建议难度</div>
+                <div className="text-2xl font-bold text-yellow-400">
+                  {adaptiveStatus.suggestedDifficulty === AI_DIFFICULTY.HARD ? '困难' :
+                   adaptiveStatus.suggestedDifficulty === AI_DIFFICULTY.EASY ? '简单' : '普通'}
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 text-center text-blue-300 text-sm">
+              {adaptiveStatus.statusMessage}
+            </div>
           </div>
         </div>
       )}

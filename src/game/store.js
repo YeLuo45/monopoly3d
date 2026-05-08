@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { BOARD_CONFIG, BOARD_SIZE, STARTING_MONEY, MAX_ROUNDS, QUESTION_TILE_IDS, TILE_TYPES } from './boardConfig';
 import { rollDice, getDiceResult } from './dice';
-import { AI_DIFFICULTY, chooseAIAction } from './aiBrain';
+import { AI_DIFFICULTY, chooseAIAction, getAdaptiveDifficulty } from './aiBrain';
 import { THEMES } from './themes';
 
 // Achievement System Integration
@@ -214,6 +214,110 @@ export const useGameStore = create((set, get) => ({
         },
       },
     }));
+  },
+
+  // AI Learning: Record AI decision for learning analytics
+  recordDecision: (decisionType, details) => {
+    const state = get();
+    const studentId = state.studentId || 'anonymous';
+    
+    // Load existing AI learning data
+    const aiLearningJson = localStorage.getItem('monopoly3d_ai_learning');
+    const aiLearning = aiLearningJson ? JSON.parse(aiLearningJson) : {
+      decisions: [], // { type, tileId, tileName, score, action, timestamp, gameId }
+      games: [], // gameId -> { decisions: [], startTime }
+      stats: { totalDecisions: 0, correctDecisions: 0, errors: 0 }
+    };
+    
+    // Generate game ID if not exists
+    if (!aiLearning.currentGameId) {
+      aiLearning.currentGameId = Date.now().toString(36);
+    }
+    
+    // Record the decision
+    const decision = {
+      type: decisionType, // 'buy' | 'pass' | 'build' | 'trade'
+      tileId: details.tileId || null,
+      tileName: details.tileName || '',
+      score: details.score || null,
+      action: details.action || null,
+      decision: details.decision || null, // what AI chose
+      timestamp: Date.now(),
+      gameId: aiLearning.currentGameId,
+      playerMoney: details.playerMoney || 0,
+      playerPosition: details.playerPosition || 0,
+    };
+    
+    aiLearning.decisions.push(decision);
+    aiLearning.stats.totalDecisions++;
+    
+    // Keep last 500 decisions
+    if (aiLearning.decisions.length > 500) {
+      aiLearning.decisions = aiLearning.decisions.slice(-500);
+    }
+    
+    localStorage.setItem('monopoly3d_ai_learning', JSON.stringify(aiLearning));
+  },
+
+  // Mark last AI decision outcome (correct/good or error/bad) - call after game end
+  recordDecisionOutcome: (outcome) => {
+    const aiLearningJson = localStorage.getItem('monopoly3d_ai_learning');
+    if (!aiLearningJson) return;
+    
+    const aiLearning = JSON.parse(aiLearningJson);
+    if (aiLearning.decisions.length > 0) {
+      // Mark the last decision with outcome
+      aiLearning.decisions[aiLearning.decisions.length - 1].outcome = outcome; // 'good' | 'bad' | 'neutral'
+      if (outcome === 'bad') {
+        aiLearning.stats.errors++;
+      }
+      localStorage.setItem('monopoly3d_ai_learning', JSON.stringify(aiLearning));
+    }
+  },
+
+  // Get AI learning stats for display
+  getAILearningStats: () => {
+    const aiLearningJson = localStorage.getItem('monopoly3d_ai_learning');
+    if (!aiLearningJson) {
+      return { 
+        totalDecisions: 0, 
+        buyDecisions: 0, 
+        passDecisions: 0, 
+        buildDecisions: 0,
+        errorRate: 0,
+        recentDecisions: []
+      };
+    }
+    
+    const aiLearning = JSON.parse(aiLearningJson);
+    const decisions = aiLearning.decisions || [];
+    
+    const buyDecisions = decisions.filter(d => d.type === 'buy');
+    const passDecisions = decisions.filter(d => d.type === 'pass');
+    const buildDecisions = decisions.filter(d => d.type === 'build');
+    
+    const errorRate = aiLearning.stats.totalDecisions > 0 
+      ? Math.round((aiLearning.stats.errors / aiLearning.stats.totalDecisions) * 100) 
+      : 0;
+    
+    return {
+      totalDecisions: decisions.length,
+      buyDecisions: buyDecisions.length,
+      passDecisions: passDecisions.length,
+      buildDecisions: buildDecisions.length,
+      errorRate,
+      recentDecisions: decisions.slice(-20).reverse(),
+      stats: aiLearning.stats,
+    };
+  },
+
+  // Reset AI learning data
+  resetAILearning: () => {
+    if (confirm('确定要重置AI学习数据吗？此操作不可撤销！')) {
+      localStorage.removeItem('monopoly3d_ai_learning');
+      return true;
+    }
+    return false;
   },
 
   startGameStats: () => {
@@ -1010,9 +1114,12 @@ toggleTeacherMode: () => set(s => ({ teacherMode: !s.teacherMode })),
     const currentPlayer = state.players[state.currentPlayerIndex];
     if (!currentPlayer.isAI) return;
     
-    // Get AI difficulty
+    // Get AI difficulty (resolve adaptive to actual difficulty)
     const aiIndex = currentPlayer.id - state.humanCount;
-    const difficulty = state.aiDifficulties[aiIndex] || AI_DIFFICULTY.NORMAL;
+    const storedDifficulty = state.aiDifficulties[aiIndex] || AI_DIFFICULTY.NORMAL;
+    const difficulty = storedDifficulty === AI_DIFFICULTY.ADAPTIVE 
+      ? getAdaptiveDifficulty() 
+      : storedDifficulty;
     
     // Show thinking state if delay is enabled
     if (state.aiThinkingDelayEnabled) {
@@ -1025,9 +1132,24 @@ toggleTeacherMode: () => set(s => ({ teacherMode: !s.teacherMode })),
     setTimeout(() => {
       // After dice roll, use aiBrain to decide buy/build/pass
       if (state.phase === 'buy_property') {
-        const action = chooseAIAction(get(), state.currentPlayerIndex, difficulty);
-        set({ aiThinking: false });
+        const currentState = get();
+        const currentPlayer = currentState.players[currentState.currentPlayerIndex];
+        const currentTile = BOARD_CONFIG[currentPlayer.position];
         
+        const action = chooseAIAction(get(), currentState.currentPlayerIndex, difficulty);
+        
+        // Record AI decision for learning
+        get().recordDecision('buy', {
+          tileId: currentTile?.id,
+          tileName: currentTile?.name,
+          score: action.score,
+          action: action.action,
+          playerMoney: currentPlayer?.money,
+          playerPosition: currentPlayer?.position,
+        });
+        
+        set({ aiThinking: false });
+
         if (action.action === 'buy') {
           get().buyProperty();
         } else {

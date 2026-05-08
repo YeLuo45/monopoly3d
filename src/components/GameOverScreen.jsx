@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameStore } from '../game/store';
+import { learn } from '../game/aiBrain';
 import StudentReport, { StudentReportSummary } from './StudentReport';
 
 export default function GameOverScreen() {
@@ -7,8 +8,19 @@ export default function GameOverScreen() {
   const players = useGameStore(s => s.players);
   const goToMenu = useGameStore(s => s.goToMenu);
   const goToSetup = useGameStore(s => s.goToSetup);
+  const gameStats = useGameStore(s => s.gameStats);
   
   const [showStudentReport, setShowStudentReport] = useState(false);
+
+  // Call adaptive AI learn function when game ends
+  useEffect(() => {
+    const gameResult = {
+      winner,
+      players,
+      questionsAnswered: gameStats.questionsAnswered || [],
+    };
+    learn(gameResult);
+  }, []);
   
   // Rank all players by net worth
   const rankedPlayers = [...players].sort((a, b) => {
