@@ -3,11 +3,17 @@ import { useGameStore } from '../game/store';
 import { useMultiplayerStore } from '../multiplayer/multiplayerStore';
 import { AchievementPanel, useAchievementStore } from '../features/achievement';
 import { OnlineLobby } from '../multiplayer';
-import { LOCALES, getLocale, setLocale, getLocaleName } from '../i18n';
+import { LOCALES, getLocale, setLocale, getLocaleName, t } from '../i18n';
 
 function LanguageSelector() {
   const [open, setOpen] = useState(false);
-  const current = getLocale();
+  const [, forceUpdate] = useState(0);
+
+  useEffect(() => {
+    const handler = () => forceUpdate(n => n + 1);
+    window.addEventListener('localechange', handler);
+    return () => window.removeEventListener('localechange', handler);
+  }, []);
 
   return (
     <div className="relative">
@@ -15,7 +21,7 @@ function LanguageSelector() {
         onClick={() => setOpen(!open)}
         className="px-8 py-4 bg-gradient-to-r from-gray-600 to-gray-700 rounded-xl text-xl font-bold shadow-lg hover:scale-105 transition-all w-full text-left flex items-center justify-between"
       >
-        <span>🌐 {getLocaleName(current)}</span>
+        <span>🌐 {getLocaleName(getLocale())}</span>
         <span className="text-sm">{open ? '▲' : '▼'}</span>
       </button>
       {open && (
@@ -24,7 +30,7 @@ function LanguageSelector() {
             <button
               key={code}
               onClick={() => { setLocale(code); setOpen(false); }}
-              className={`w-full px-4 py-3 text-left hover:bg-gray-700 transition-colors ${current === code ? 'bg-gray-700 text-yellow-400' : 'text-white'}`}
+              className={`w-full px-4 py-3 text-left hover:bg-gray-700 transition-colors ${getLocale() === code ? 'bg-gray-700 text-yellow-400' : 'text-white'}`}
             >
               {nativeName}
             </button>
@@ -45,51 +51,48 @@ export default function MenuScreen() {
   const loadStudentId = useGameStore(s => s.loadStudentId);
   const studentId = useGameStore(s => s.studentId);
   const achievementStore = useAchievementStore(s => s.profileStats);
-  
+
   const [showStudentIdPrompt, setShowStudentIdPrompt] = useState(false);
-  const [showAchievementPanel, setShowAchievementPanel] = useState(false); // eslint-disable-line no-unused-vars
+  const [showAchievementPanel, setShowAchievementPanel] = useState(false);
   const [studentName, setStudentName] = useState('');
   const [showOnlineMultiplayer, setShowOnlineMultiplayer] = useState(false);
-  // Legacy LAN multiplayer state (for backward compatibility)
   const [showLANMultiplayerMenu, setShowLANMultiplayerMenu] = useState(false);
-  const [multiplayerMode, setMultiplayerMode] = useState(null); // null | 'host' | 'join'
+  const [multiplayerMode, setMultiplayerMode] = useState(null);
   const [roomCode, setRoomCode] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionError, setConnectionError] = useState('');
-  
-  // Replay state
+
   const [showReplayList, setShowReplayList] = useState(false);
   const [replayList, setReplayList] = useState([]);
   const [isLoadingReplays, setIsLoadingReplays] = useState(false);
-  
-  // Check for existing student ID on mount
+
   useEffect(() => {
     const savedId = loadStudentId();
     if (!savedId) {
       setShowStudentIdPrompt(true);
     }
   }, []);
-  
+
   const handleResume = () => {
     const success = loadGame();
-    if (!success) alert('没有找到存档！');
+    if (!success) alert(t('no_save_found'));
   };
-  
+
   const handleSaveStudentId = () => {
     if (studentName.trim()) {
       setStudentId(studentName.trim());
       setShowStudentIdPrompt(false);
     }
   };
-  
+
   const handleSkipStudentId = () => {
     setShowStudentIdPrompt(false);
   };
-  
+
   const handleCreateRoom = async () => {
     if (!window.monopolyMultiplayer) {
-      setConnectionError('多人游戏模块未加载，请刷新页面重试');
+      setConnectionError(t('multiplayer_not_loaded'));
       return;
     }
     setIsConnecting(true);
@@ -100,18 +103,18 @@ export default function MenuScreen() {
       setMultiplayerMode('host');
       setIsConnecting(false);
     } catch (err) {
-      setConnectionError('创建房间失败: ' + err.message);
+      setConnectionError(t('create_room_failed') + err.message);
       setIsConnecting(false);
     }
   };
-  
+
   const handleJoinRoom = async () => {
     if (!joinCode.trim()) {
-      setConnectionError('请输入房间码');
+      setConnectionError(t('enter_room_code'));
       return;
     }
     if (!window.monopolyMultiplayer) {
-      setConnectionError('多人游戏模块未加载，请刷新页面重试');
+      setConnectionError(t('multiplayer_not_loaded'));
       return;
     }
     setIsConnecting(true);
@@ -122,11 +125,11 @@ export default function MenuScreen() {
       setMultiplayerMode('join');
       setIsConnecting(false);
     } catch (err) {
-      setConnectionError('加入房间失败: ' + err.message);
+      setConnectionError(t('join_room_failed') + err.message);
       setIsConnecting(false);
     }
   };
-  
+
   const handleCancelMultiplayer = () => {
     if (window.monopolyMultiplayer) {
       window.monopolyMultiplayer.disconnect();
@@ -137,39 +140,29 @@ export default function MenuScreen() {
     setConnectionError('');
     setShowLANMultiplayerMenu(false);
   };
-  
-  // Online multiplayer handlers
+
   const handleOnlineMultiplayerBack = () => {
     setShowOnlineMultiplayer(false);
   };
-  
+
   const handleOnlineGameStart = () => {
-    // Transition to online game
     const store = useGameStore.getState();
-    store.setPlayers(1, 0, []); // Start with 1 human in multiplayer
+    store.setPlayers(1, 0, []);
     setShowOnlineMultiplayer(false);
   };
 
   const handleLoadReplay = async (replay) => {
     try {
       const { loadReplay, initialize } = useMultiplayerStore.getState();
-      
-      // Initialize if needed
       await initialize();
-      
-      // Load the replay
       await loadReplay(replay.id);
-      
-      // Transition to replay playback
       const store = useGameStore.getState();
-      store.setPlayers(1, 0, []); // Placeholder
+      store.setPlayers(1, 0, []);
       setShowReplayList(false);
-      
-      // Note: The actual replay playback would need to be handled by a ReplayScreen
-      alert(`回放已加载: ${replay.room_code}\n持续时间: ${Math.round(replay.duration / 1000)}秒\n事件数: ${replay.event_count}`);
+      alert(`${t('replay_loaded')}${replay.room_code}\n${t('duration')}: ${Math.round(replay.duration / 1000)}${t('events_count')}\n${t('events_count')}: ${replay.event_count}`);
     } catch (err) {
       console.error('Load replay failed:', err);
-      alert('加载回放失败: ' + err.message);
+      alert(t('load_replay_failed') + err.message);
     }
   };
 
@@ -192,17 +185,15 @@ export default function MenuScreen() {
     setShowReplayList(false);
     setReplayList([]);
   };
-  
+
   const handleStartMultiplayerGame = () => {
-    // Go to setup with multiplayer flag
-    // The setup screen will handle player count for multiplayer
     const store = useGameStore.getState();
-    store.setPlayers(1, 0, []); // Start with 1 human in multiplayer (more can join)
+    store.setPlayers(1, 0, []);
     setShowMultiplayerMenu(false);
   };
-  
+
   const savedGame = typeof window !== 'undefined' && localStorage.getItem('monopoly3d_save');
-  
+
   // Student ID Prompt Modal
   if (showStudentIdPrompt) {
     return (
@@ -210,56 +201,56 @@ export default function MenuScreen() {
         <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-3xl p-8 max-w-md w-full mx-4 border border-purple-500/30">
           <div className="text-center mb-6">
             <div className="text-5xl mb-4">👤</div>
-            <h2 className="text-2xl font-bold mb-2">欢迎来到大富翁3D</h2>
-            <p className="text-purple-300">请输入你的名字开始学习吧！</p>
+            <h2 className="text-2xl font-bold mb-2">{t('welcome_title')}</h2>
+            <p className="text-purple-300">{t('welcome_subtitle')}</p>
           </div>
-          
+
           <div className="mb-4">
             <input
               type="text"
               value={studentName}
               onChange={(e) => setStudentName(e.target.value)}
-              placeholder="输入你的名字或昵称"
+              placeholder={t('name_placeholder')}
               className="w-full px-4 py-3 bg-black/30 border border-purple-500/50 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-400"
               maxLength={20}
               onKeyDown={(e) => e.key === 'Enter' && handleSaveStudentId()}
             />
           </div>
-          
+
           <div className="flex gap-3">
             <button
               onClick={handleSkipStudentId}
               className="flex-1 px-4 py-3 bg-gray-600/50 hover:bg-gray-500 rounded-xl font-bold"
             >
-              稍后设置
+              {t('set_later')}
             </button>
             <button
               onClick={handleSaveStudentId}
               className="flex-1 px-4 py-3 bg-gradient-to-r from-pink-500 to-purple-600 rounded-xl font-bold hover:scale-105 transition-all"
               disabled={!studentName.trim()}
             >
-              开始游戏
+              {t('start_game')}
             </button>
           </div>
-          
+
           <p className="text-xs text-gray-500 mt-4 text-center">
-            你的游戏记录将与这个名字关联，方便老师查看学习报告
+            {t('game_records_note')}
           </p>
         </div>
       </div>
     );
   }
-  
+
   // Online Multiplayer Lobby
   if (showOnlineMultiplayer) {
     return (
-      <OnlineLobby 
+      <OnlineLobby
         onBack={handleOnlineMultiplayerBack}
         onGameStart={handleOnlineGameStart}
       />
     );
   }
-  
+
   // LAN Multiplayer Menu Modal
   if (showLANMultiplayerMenu) {
     return (
@@ -268,7 +259,7 @@ export default function MenuScreen() {
           <div className="flex items-center justify-between mb-6">
             <div className="text-center flex-1">
               <div className="text-4xl mb-2">📡</div>
-              <h2 className="text-xl font-bold">局域网联机</h2>
+              <h2 className="text-xl font-bold">{t('lan_multiplayer')}</h2>
             </div>
             <button
               onClick={handleCancelMultiplayer}
@@ -277,29 +268,29 @@ export default function MenuScreen() {
               ✕
             </button>
           </div>
-          
+
           {!multiplayerMode && (
             <div className="space-y-4">
               <p className="text-purple-300 text-sm text-center mb-4">
-                与同一局域网内的其他玩家进行游戏
+                {t('lan_multiplayer_desc')}
               </p>
-              
+
               <button
                 onClick={handleCreateRoom}
                 disabled={isConnecting}
                 className="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl font-bold text-lg hover:scale-105 transition-all disabled:opacity-50"
               >
-                {isConnecting ? '创建中...' : '🏠 创建房间'}
+                {isConnecting ? t('creating') : `🏠 ${t('create_room')}`}
               </button>
-              
-              <div className="text-center text-gray-400 my-2">或者</div>
-              
+
+              <div className="text-center text-gray-400 my-2">{t('or')}</div>
+
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                  placeholder="输入房间码"
+                  placeholder={t('room_code_placeholder')}
                   className="flex-1 px-4 py-3 bg-black/30 border border-purple-500/50 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-400 uppercase"
                   maxLength={6}
                 />
@@ -308,10 +299,10 @@ export default function MenuScreen() {
                   disabled={isConnecting || !joinCode.trim()}
                   className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-xl font-bold hover:scale-105 transition-all disabled:opacity-50"
                 >
-                  加入
+                  {t('join')}
                 </button>
               </div>
-              
+
               {connectionError && (
                 <div className="text-red-400 text-sm text-center bg-red-900/30 rounded-lg p-2">
                   {connectionError}
@@ -319,48 +310,48 @@ export default function MenuScreen() {
               )}
             </div>
           )}
-          
+
           {multiplayerMode === 'host' && (
             <div className="text-center">
-              <div className="text-green-400 text-sm mb-2">✅ 房间已创建</div>
+              <div className="text-green-400 text-sm mb-2">✅ {t('room_created')}</div>
               <div className="bg-black/30 rounded-xl p-4 mb-4">
-                <div className="text-xs text-gray-400 mb-1">房间码</div>
+                <div className="text-xs text-gray-400 mb-1">{t('room_code')}</div>
                 <div className="text-4xl font-bold tracking-widest text-yellow-400">
                   {roomCode}
                 </div>
               </div>
               <p className="text-purple-300 text-sm mb-4">
-                将此房间码告诉其他玩家，让他们加入游戏
+                {t('share_code')}
               </p>
               <div className="text-gray-400 text-xs mb-4">
-                连接玩家: 1/{6}
+                {t('players_connected')}: 1/{6}
               </div>
               <button
                 onClick={handleStartMultiplayerGame}
                 className="w-full px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 rounded-xl font-bold"
               >
-                开始游戏
+                {t('start_game')}
               </button>
             </div>
           )}
-          
+
           {multiplayerMode === 'join' && (
             <div className="text-center">
-              <div className="text-green-400 text-sm mb-2">✅ 已连接到房间</div>
+              <div className="text-green-400 text-sm mb-2">✅ {t('connected')}</div>
               <div className="bg-black/30 rounded-xl p-4 mb-4">
-                <div className="text-xs text-gray-400 mb-1">房间码</div>
+                <div className="text-xs text-gray-400 mb-1">{t('room_code')}</div>
                 <div className="text-2xl font-bold tracking-widest text-yellow-400">
                   {roomCode}
                 </div>
               </div>
               <p className="text-purple-300 text-sm mb-4">
-                等待房主开始游戏...
+                {t('waiting_host')}
               </p>
               <button
                 onClick={handleCancelMultiplayer}
                 className="w-full px-6 py-3 bg-gray-600 rounded-xl font-bold"
               >
-                退出
+                {t('exit')}
               </button>
             </div>
           )}
@@ -368,92 +359,92 @@ export default function MenuScreen() {
       </div>
     );
   }
-  
+
   return (
     <div className="flex flex-col items-center justify-center h-screen text-white">
       {/* Title */}
       <div className="mb-12 text-center">
         <h1 className="text-6xl font-bold mb-4 bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-500 bg-clip-text text-transparent">
-          🏦 大富翁3D
+          🏦 {t('app_title')}
         </h1>
-        <p className="text-xl text-purple-200">Educational Edition · 教育版</p>
+        <p className="text-xl text-purple-200">Educational Edition</p>
         {studentId && (
-          <p className="text-sm text-purple-400 mt-2">欢迎, {studentId}</p>
+          <p className="text-sm text-purple-400 mt-2">👋 {studentId}</p>
         )}
       </div>
-      
+
       {/* Menu Buttons */}
       <div className="flex flex-col gap-4 w-72">
         <button
           onClick={goToSetup}
           className="px-8 py-4 bg-gradient-to-r from-pink-500 to-purple-600 rounded-xl text-xl font-bold shadow-lg hover:shadow-purple-500/50 hover:scale-105 transition-all"
         >
-          🎮 新游戏
+          🎮 {t('new_game')}
         </button>
-        
+
         {savedGame && (
           <button
             onClick={handleResume}
             className="px-8 py-4 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-xl text-xl font-bold shadow-lg hover:shadow-blue-500/50 hover:scale-105 transition-all"
           >
-            📁 继续游戏
+            📁 {t('continue_game')}
           </button>
         )}
-        
+
         <button
           onClick={() => setShowOnlineMultiplayer(true)}
           className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-xl font-bold shadow-lg hover:shadow-green-500/50 hover:scale-105 transition-all"
         >
-          🌐 在线对战
+          🌐 {t('online_battle')}
         </button>
-        
+
         <button
           onClick={handleShowReplayList}
           className="px-8 py-4 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl text-xl font-bold shadow-lg hover:shadow-purple-500/50 hover:scale-105 transition-all"
         >
-          📹 查看回放
+          📹 {t('view_replays')}
         </button>
-        
+
         <button
           onClick={() => setShowLANMultiplayerMenu(true)}
           className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl text-xl font-bold shadow-lg hover:shadow-cyan-500/50 hover:scale-105 transition-all"
         >
-          📡 局域网联机
+          📡 {t('lan_multiplayer')}
         </button>
-        
+
         <button
           onClick={goToEditor}
           className="px-8 py-4 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl text-xl font-bold shadow-lg hover:shadow-orange-500/50 hover:scale-105 transition-all"
         >
-          🗺️ 地图编辑器
+          🗺️ {t('map_editor')}
         </button>
 
         <button
           onClick={goToTeacherPage}
           className="px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl text-xl font-bold shadow-lg hover:shadow-purple-500/50 hover:scale-105 transition-all"
         >
-          🎓 教师端
+          🎓 {t('teacher')}
         </button>
-        
+
         <button
-          onClick={() => alert('📖 游戏规则：\\n\\n1. 轮流掷骰子移动棋子\\n2. 停在空地上可以购买地产\\n3. 停在问题格子上回答问题\\n4. 答对获得奖励，答错扣除金钱\\n5. 建造房屋可增加租金收入\\n6. 其他玩家经过你的地产时需付租金\\n7. 破产即出局，最后一人获胜！')}
+          onClick={() => alert(t('rules_text'))}
           className="px-8 py-4 bg-gradient-to-r from-gray-600 to-gray-700 rounded-xl text-xl font-bold shadow-lg hover:shadow-gray-500/50 hover:scale-105 transition-all"
         >
-          📖 游戏规则
+          📖 {t('game_rules')}
         </button>
-        
+
         <button
           onClick={() => setShowAchievementPanel(true)}
           className="px-8 py-4 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-xl text-xl font-bold shadow-lg hover:shadow-yellow-500/50 hover:scale-105 transition-all"
         >
-          🏆 成就中心
+          🏆 {t('achievements')}
         </button>
 
         <button
           onClick={goToProfile}
           className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl text-xl font-bold shadow-lg hover:scale-105 transition-all"
         >
-          👤 玩家档案
+          👤 {t('profile')}
         </button>
 
         <LanguageSelector />
@@ -462,12 +453,12 @@ export default function MenuScreen() {
           onClick={useGameStore.getState().goToWorkshop}
           className="px-8 py-4 bg-gradient-to-r from-pink-600 to-rose-600 rounded-xl text-xl font-bold shadow-lg hover:scale-105 transition-all"
         >
-          🎨 创意工坊
+          🎨 {t('creative_workshop')}
         </button>
-        
+
         <button
           onClick={() => {
-            if (confirm('确定要切换账号吗？这不会删除你的历史记录。')) {
+            if (confirm(t('confirm_switch_account'))) {
               localStorage.removeItem('monopoly3d_student_id');
               setStudentId(null);
               setShowStudentIdPrompt(true);
@@ -475,14 +466,14 @@ export default function MenuScreen() {
           }}
           className="px-8 py-4 bg-gradient-to-r from-gray-600 to-gray-700 rounded-xl text-xl font-bold shadow-lg hover:shadow-gray-500/50 hover:scale-105 transition-all"
         >
-          👤 切换账号
+          👤 {t('switch_account')}
         </button>
-        
+
         <button
-          onClick={() => alert('🎓 大富翁3D教育版\n\n制作：教育游戏工作室\n版本：1.0.0\n\n© 2026')}
+          onClick={() => alert(t('about_text'))}
           className="px-8 py-4 bg-gradient-to-r from-gray-600 to-gray-700 rounded-xl text-xl font-bold shadow-lg hover:shadow-gray-500/50 hover:scale-105 transition-all"
         >
-          ℹ️ 关于游戏
+          ℹ️ {t('about_game')}
         </button>
       </div>
 
@@ -490,7 +481,7 @@ export default function MenuScreen() {
       {showAchievementPanel && (
         <AchievementPanel onClose={() => setShowAchievementPanel(false)} />
       )}
-      
+
       {/* Replay List Modal */}
       {showReplayList && (
         <div className="flex flex-col items-center justify-center h-screen text-white">
@@ -499,7 +490,7 @@ export default function MenuScreen() {
             <div className="flex items-center justify-between mb-6">
               <div className="text-center flex-1">
                 <div className="text-4xl mb-2">📹</div>
-                <h2 className="text-xl font-bold">游戏回放</h2>
+                <h2 className="text-xl font-bold">{t('game_replay')}</h2>
               </div>
               <button
                 onClick={handleCloseReplayList}
@@ -508,18 +499,18 @@ export default function MenuScreen() {
                 ✕
               </button>
             </div>
-            
+
             {/* Replay List */}
             <div className="flex-1 overflow-y-auto">
               {isLoadingReplays ? (
                 <div className="text-center text-gray-400 py-8">
-                  加载中...
+                  {t('loading')}
                 </div>
               ) : replayList.length === 0 ? (
                 <div className="text-center text-gray-400 py-8">
                   <div className="text-4xl mb-2">📭</div>
-                  <p>暂无回放记录</p>
-                  <p className="text-sm mt-1">完成游戏后会自动保存回放</p>
+                  <p>{t('no_replays')}</p>
+                  <p className="text-sm mt-1">{t('replay_hint')}</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -535,18 +526,18 @@ export default function MenuScreen() {
                               {replay.room_code}
                             </span>
                             <span className="text-xs text-gray-500">
-                              {new Date(replay.recorded_at).toLocaleDateString('zh-CN')}
+                              {new Date(replay.recorded_at).toLocaleDateString()}
                             </span>
                           </div>
                           <div className="text-xs text-gray-400 mt-1">
-                            持续 {Math.round(replay.duration / 1000)}秒 · {replay.event_count} 个事件
+                            {t('duration')} {Math.round(replay.duration / 1000)}{t('events_count')} · {replay.event_count} {t('events_count')}
                           </div>
                         </div>
                         <button
                           onClick={() => handleLoadReplay(replay)}
                           className="text-xs px-3 py-1 bg-purple-500/50 hover:bg-purple-500 rounded-lg"
                         >
-                          ▶️ 播放
+                          ▶️ {t('play')}
                         </button>
                       </div>
                     </div>
