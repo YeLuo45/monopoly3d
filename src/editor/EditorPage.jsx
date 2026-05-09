@@ -7,6 +7,7 @@ import EditorBoard from './EditorBoard';
 import PropertiesPanel from './PropertiesPanel';
 import { BOARD_THEMES } from '../game/themes';
 import { useGameStore } from '../game/store';
+import { t } from '../i18n';
 
 function Toolbar({ onSave, onLoad, onExport, onImport }) {
   const boardSize = useEditorStore((s) => s.boardSize);
@@ -44,7 +45,7 @@ function Toolbar({ onSave, onLoad, onExport, onImport }) {
     <div className="flex items-center gap-2 p-2 bg-gray-800/95 rounded-lg">
       {/* Board Size Selector */}
       <div className="flex items-center gap-2 border-r border-gray-600 pr-3">
-        <span className="text-sm text-gray-300">棋盘:</span>
+        <span className="text-sm text-gray-300">{t('board')}:</span>
         <select
           value={boardSize}
           onChange={(e) => setBoardSize(parseInt(e.target.value))}
@@ -58,13 +59,13 @@ function Toolbar({ onSave, onLoad, onExport, onImport }) {
 
       {/* Templates */}
       <div className="flex items-center gap-2 border-r border-gray-600 pr-3">
-        <span className="text-sm text-gray-300">模板:</span>
+        <span className="text-sm text-gray-300">{t('templates')}:</span>
         <select
           onChange={(e) => e.target.value && loadTemplate(e.target.value)}
           className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm text-white"
           value=""
         >
-          <option value="">选择模板...</option>
+          <option value="">{t('select_template')}</option>
           {Object.entries(templates).map(([key, template]) => (
             <option key={key} value={key}>{template.name}</option>
           ))}
@@ -77,7 +78,7 @@ function Toolbar({ onSave, onLoad, onExport, onImport }) {
           onClick={undo}
           disabled={historyIndex <= 0}
           className="p-2 rounded hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
-          title="撤销"
+          title={t('undo')}
         >
           ↩️
         </button>
@@ -85,7 +86,7 @@ function Toolbar({ onSave, onLoad, onExport, onImport }) {
           onClick={redo}
           disabled={historyIndex >= history.length - 1}
           className="p-2 rounded hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
-          title="重做"
+          title={t('redo')}
         >
           ↪️
         </button>
@@ -97,13 +98,13 @@ function Toolbar({ onSave, onLoad, onExport, onImport }) {
           onClick={togglePreview}
           className={`px-3 py-1 rounded text-sm ${isPreviewMode ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'}`}
         >
-          {isPreviewMode ? '编辑模式' : '预览模式'}
+          {isPreviewMode ? t('edit_mode') : t('preview_mode')}
         </button>
         <button
           onClick={toggleGrid}
           className={`px-3 py-1 rounded text-sm ${showGrid ? 'bg-gray-600' : 'bg-gray-700 hover:bg-gray-600'}`}
         >
-          网格
+          {t('grid')}
         </button>
       </div>
 
@@ -113,25 +114,25 @@ function Toolbar({ onSave, onLoad, onExport, onImport }) {
           onClick={onSave}
           className="px-3 py-1 rounded text-sm bg-green-600 hover:bg-green-700"
         >
-          保存
+          {t('save')}
         </button>
         <button
           onClick={onLoad}
           className="px-3 py-1 rounded text-sm bg-blue-600 hover:bg-blue-700"
         >
-          加载
+          {t('load')}
         </button>
         <button
           onClick={handleImportClick}
           className="px-3 py-1 rounded text-sm bg-purple-600 hover:bg-purple-700"
         >
-          导入
+          {t('import')}
         </button>
         <button
           onClick={onExport}
           className="px-3 py-1 rounded text-sm bg-orange-600 hover:bg-orange-700"
         >
-          导出
+          {t('export')}
         </button>
         <input
           ref={fileInputRef}
@@ -156,14 +157,14 @@ function RulesPanel() {
         onClick={() => setIsOpen(!isOpen)}
         className="w-full p-3 text-left text-white font-medium flex justify-between items-center hover:bg-gray-800"
       >
-        <span>⚙️ 游戏规则配置</span>
+        <span>⚙️ {t('game_rules_config')}</span>
         <span>{isOpen ? '▼' : '▶'}</span>
       </button>
       
       {isOpen && (
         <div className="p-4 grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm text-gray-300 mb-1">起始资金</label>
+            <label className="block text-sm text-gray-300 mb-1">{t('starting_money')}</label>
             <input
               type="number"
               value={rules.startingMoney}
@@ -172,7 +173,7 @@ function RulesPanel() {
             />
           </div>
           <div>
-            <label className="block text-sm text-gray-300 mb-1">经过起点奖励</label>
+            <label className="block text-sm text-gray-300 mb-1">{t('passing_go_bonus')}</label>
             <input
               type="number"
               value={rules.passingGoBonus}
@@ -181,7 +182,7 @@ function RulesPanel() {
             />
           </div>
           <div>
-            <label className="block text-sm text-gray-300 mb-1">房屋成本</label>
+            <label className="block text-sm text-gray-300 mb-1">{t('house_cost')}</label>
             <input
               type="number"
               value={rules.houseCost}
@@ -190,7 +191,7 @@ function RulesPanel() {
             />
           </div>
           <div>
-            <label className="block text-sm text-gray-300 mb-1">酒店成本</label>
+            <label className="block text-sm text-gray-300 mb-1">{t('hotel_cost')}</label>
             <input
               type="number"
               value={rules.hotelCost}
@@ -199,7 +200,7 @@ function RulesPanel() {
             />
           </div>
           <div>
-            <label className="block text-sm text-gray-300 mb-1">最大回合数</label>
+            <label className="block text-sm text-gray-300 mb-1">{t('max_rounds')}</label>
             <input
               type="number"
               value={rules.maxRounds}
@@ -208,7 +209,7 @@ function RulesPanel() {
             />
           </div>
           <div>
-            <label className="block text-sm text-gray-300 mb-1">问题计时(秒)</label>
+            <label className="block text-sm text-gray-300 mb-1">{t('question_timer_seconds')}</label>
             <input
               type="number"
               value={rules.questionTimer}
@@ -231,7 +232,7 @@ function ApplyToGameButton() {
     // Store in localStorage for game to load
     localStorage.setItem('monopoly3d_editor_tiles', JSON.stringify(tiles));
     localStorage.setItem('monopoly3d_editor_rules', JSON.stringify(rules));
-    alert('地图已保存，将在下次游戏中加载！');
+    alert(t('map_saved_for_game'));
     setScreen('menu');
   };
   
@@ -240,7 +241,7 @@ function ApplyToGameButton() {
       onClick={handleApply}
       className="w-full mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg px-4 py-3 font-bold transition-all"
     >
-      🚀 应用到游戏
+      🚀 {t('apply_to_game')}
     </button>
   );
 }
@@ -255,19 +256,19 @@ export default function EditorPage() {
   const handleSave = useCallback(() => {
     const data = exportTiles();
     localStorage.setItem('monopoly3d_editor_save', data);
-    alert('编辑器数据已保存到本地存储！');
+    alert(t('editor_data_saved'));
   }, [exportTiles]);
 
   const handleLoad = useCallback(() => {
     const saved = localStorage.getItem('monopoly3d_editor_save');
     if (saved) {
       if (importTiles(saved)) {
-        alert('数据加载成功！');
+        alert(t('data_loaded_success'));
       } else {
-        alert('数据加载失败！');
+        alert(t('data_load_failed'));
       }
     } else {
-      alert('没有找到保存的数据！');
+      alert(t('no_saved_data'));
     }
   }, [importTiles]);
 
@@ -284,9 +285,9 @@ export default function EditorPage() {
 
   const handleImport = useCallback((jsonData) => {
     if (importTiles(jsonData)) {
-      alert('地图导入成功！');
+      alert(t('map_import_success'));
     } else {
-      alert('地图导入失败！请检查文件格式。');
+      alert(t('map_import_failed'));
     }
   }, [importTiles]);
 
@@ -328,17 +329,17 @@ export default function EditorPage() {
           {/* Overlay info */}
           <div className="absolute top-4 left-4 bg-gray-900/80 rounded-lg p-3 text-white">
             <div className="text-sm font-medium">
-              📐 {BOARD_SIZES[boardSize]?.label || `${boardSize}格`}
+              📐 {BOARD_SIZES[boardSize]?.label || `${boardSize}${t('tiles')}`}
             </div>
             <div className="text-xs text-gray-400 mt-1">
-              当前地图: {tiles.length} 格子 | 点击格子编辑
+              {t('current_map')}: {tiles.length} {t('tiles_count')} | {t('click_tile_to_edit')}
             </div>
           </div>
 
           {/* Mode indicator */}
           {isPreviewMode && (
             <div className="absolute top-4 right-4 bg-yellow-500/80 rounded-lg px-4 py-2 text-white font-bold">
-              👁 预览模式 - 仅供查看
+              👁 {t('preview_mode_view_only')}
             </div>
           )}
         </div>
