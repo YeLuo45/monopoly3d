@@ -2,6 +2,7 @@ import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import { useGameStore } from '../../game/store';
+import { t } from '../../i18n';
 import * as THREE from 'three';
 
 // Each face has its own bright color
@@ -269,7 +270,7 @@ export default function Dice() {
           anchorX="center"
           anchorY="middle"
         >
-          {currentPlayer.name} 的回合
+          {currentPlayer.name}{t('hud_turn')}
         </Text>
       )}
     </group>

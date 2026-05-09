@@ -31,6 +31,14 @@ export function t(key) {
   return locale[key] || translations.en[key] || key;
 }
 
+export function getTileName(tile) {
+  if (!tile) return '';
+  if (tile.nameKey) {
+    return t(tile.nameKey);
+  }
+  return tile.name || '';
+}
+
 export function setLocale(locale) {
   if (LOCALES[locale]) {
     currentLocale = locale;

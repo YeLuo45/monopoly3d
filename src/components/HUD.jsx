@@ -1,5 +1,6 @@
 import { useGameStore } from '../game/store';
 import { BOARD_CONFIG } from '../game/boardConfig';
+import { t, getTileName } from '../i18n';
 
 export default function HUD() {
   const players = useGameStore(s => s.players);
@@ -20,12 +21,12 @@ export default function HUD() {
       <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-purple-700/80 via-blue-700/80 to-purple-700/80 backdrop-blur-sm p-3 flex justify-between items-center border-b-2 border-yellow-400/40">
         <div className="flex items-center gap-4">
           <div className="text-white font-bold text-lg">
-            第 <span className="text-yellow-400">{currentRound}</span> 回合 / 20
+            {t('hud_round')} <span className="text-yellow-400">{currentRound}</span> {t('hud_round_of')} 20
           </div>
           {phase === 'roll' && (
             <div className="text-gray-300 text-sm">
-              当前: <span className="text-white font-bold">{currentPlayer?.name}</span>
-              {' '}<span className="text-xs">(回合 {currentPlayer?.isAI ? '🤖' : '👤'})</span>
+              {t('hud_current')}: <span className="text-white font-bold">{currentPlayer?.name}</span>
+              {' '}<span className="text-xs">({t('hud_turn')} {currentPlayer?.isAI ? '🤖' : '👤'})</span>
             </div>
           )}
         </div>
@@ -36,14 +37,14 @@ export default function HUD() {
               onClick={saveGame}
               className="px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-bold text-white"
             >
-              💾 存档
+              💾 {t('hud_save')}
             </button>
           )}
           <button
             onClick={goToMenu}
             className="px-3 py-1 bg-red-600 hover:bg-red-500 rounded-lg text-sm font-bold text-white"
           >
-            🏠 退出
+            🏠 {t('hud_exit')}
           </button>
         </div>
       </div>
@@ -70,14 +71,14 @@ export default function HUD() {
               />
               <span className="text-white font-bold text-sm">{player.name}</span>
               {player.isAI && <span className="text-xs">🤖</span>}
-              {player.isBankrupt && <span className="text-xs text-red-400">破产</span>}
+              {player.isBankrupt && <span className="text-xs text-red-400">{t('hud_bankrupt')}</span>}
             </div>
             <div className="text-yellow-400 font-bold text-lg">
               ${player.money.toLocaleString()}
             </div>
             {player.properties.length > 0 && (
               <div className="text-xs text-gray-300">
-                房产: {player.properties.length}
+                {t('hud_properties')}: {player.properties.length}
               </div>
             )}
           </div>
@@ -103,17 +104,17 @@ export default function HUD() {
       {/* Current tile info */}
       {currentTile && phase !== 'moving' && phase !== 'question' && (
         <div className="absolute bottom-20 right-4 bg-black/60 backdrop-blur-sm rounded-xl px-4 py-3">
-          <div className="text-xs text-gray-400 mb-1">当前位置</div>
-          <div className="text-white font-bold">{currentTile.name}</div>
+          <div className="text-xs text-gray-400 mb-1">{t('hud_current_position')}</div>
+          <div className="text-white font-bold">{getTileName(currentTile)}</div>
           <div className="text-xs text-gray-300">
             {currentTile.type === 'property'
-              ? `租金: $${currentTile.rent[0]}`
+              ? `${t('hud_rent')}: $${currentTile.rent[0]}`
               : currentTile.type === 'tax'
-              ? `税金: -$${currentTile.amount}`
+              ? `${t('hud_tax')}: -$${currentTile.amount}`
               : currentTile.type === 'question'
-              ? '📝 知识问答'
+              ? t('hud_question_tile')
               : currentTile.type === 'chance'
-              ? '🎰 机会/命运'
+              ? t('hud_chance_tile')
               : currentTile.subtype || currentTile.type}
           </div>
         </div>

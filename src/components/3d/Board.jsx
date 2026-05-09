@@ -3,6 +3,7 @@ import { Text, RoundedBox, Cylinder } from '@react-three/drei';
 import { BOARD_CONFIG, BOARD_SIZE, TILE_TYPES } from '../../game/boardConfig';
 import { BOARD_THEMES } from '../../game/themes';
 import { useGameStore } from '../../game/store';
+import { getTileName } from '../../i18n';
 import * as THREE from 'three';
 
 // 36 tiles on a rounded-square loop: 9 per side
@@ -220,7 +221,7 @@ function TileMesh({ tile, position, index, theme }) {
         shadowColor="#000000"
         shadowBlur={0.1}
       >
-        {tile.name}
+        {getTileName(tile)}
       </Text>
 
       {/* Price tag */}
