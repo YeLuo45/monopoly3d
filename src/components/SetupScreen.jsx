@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useGameStore } from '../game/store';
 import { AI_DIFFICULTY, getAdaptiveAIStatus } from '../game/aiBrain';
 import { THEMES, BOARD_THEMES } from '../game/themes';
+import { t } from '../i18n';
 
 const CATEGORY_LABELS = {
   math: '🔢 数学',
@@ -16,10 +17,10 @@ const CATEGORY_LABELS = {
 };
 
 const DIFFICULTY_OPTIONS = [
-  { key: AI_DIFFICULTY.EASY, label: '简单', color: 'bg-green-600' },
-  { key: AI_DIFFICULTY.NORMAL, label: '普通', color: 'bg-yellow-600' },
-  { key: AI_DIFFICULTY.HARD, label: '困难', color: 'bg-red-600' },
-  { key: AI_DIFFICULTY.ADAPTIVE, label: '自适应', color: 'bg-blue-600' },
+  { key: AI_DIFFICULTY.EASY, label: t('ai_difficulty_easy'), color: 'bg-green-600' },
+  { key: AI_DIFFICULTY.NORMAL, label: t('ai_difficulty_normal'), color: 'bg-yellow-600' },
+  { key: AI_DIFFICULTY.HARD, label: t('ai_difficulty_hard'), color: 'bg-red-600' },
+  { key: AI_DIFFICULTY.ADAPTIVE, label: t('ai_difficulty_adaptive'), color: 'bg-blue-600' },
 ];
 
 export default function SetupScreen() {
@@ -63,7 +64,7 @@ export default function SetupScreen() {
 
   const handleStart = () => {
     if (humanCount + aiCount < 2) {
-      alert('至少需要2名玩家！');
+      alert(t('min_players_alert'));
       return;
     }
     setPlayers(humanCount, aiCount, aiDifficulties);
@@ -71,16 +72,16 @@ export default function SetupScreen() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen text-white p-8">
-      <h2 className="text-4xl font-bold mb-8 text-yellow-300">⚙️ 游戏设置</h2>
+      <h2 className="text-4xl font-bold mb-8 text-yellow-300">⚙️ {t('settings')}</h2>
 
       {/* Age Tier Selection */}
       <div className="mb-8 w-96">
-        <h3 className="text-xl mb-4 text-purple-200">选择年龄段</h3>
+        <h3 className="text-xl mb-4 text-purple-200">{t('select_age_tier')}</h3>
         <div className="grid grid-cols-1 gap-2">
           {[
-            { key: 'kindergarten', label: '🌈 幼儿园 (4-6岁)', desc: '简单问答 + 语音朗读' },
-            { key: 'primary1_2', label: '📚 小学1-2年级 (6-8岁)', desc: '基础数学 + 常识' },
-            { key: 'primary3_4', label: '🏆 小学3-4年级 (8-10岁)', desc: '进阶数学 + 科学知识' },
+            { key: 'kindergarten', label: t('age_tier_kindergarten'), desc: t('age_tier_kindergarten_desc') },
+            { key: 'primary1_2', label: t('age_tier_primary1_2'), desc: t('age_tier_primary1_2_desc') },
+            { key: 'primary3_4', label: t('age_tier_primary3_4'), desc: t('age_tier_primary3_4_desc') },
           ].map(opt => (
             <button
               key={opt.key}
@@ -100,7 +101,7 @@ export default function SetupScreen() {
 
       {/* Enabled Categories Display */}
       <div className="mb-8 w-96">
-        <h3 className="text-xl mb-4 text-purple-200">已启用题目类别</h3>
+        <h3 className="text-xl mb-4 text-purple-200">{t('enabled_categories')}</h3>
         <div className="bg-gray-800/50 rounded-xl p-4">
           <div className="flex flex-wrap gap-2">
             {enabledCategories.map(cat => (
@@ -113,18 +114,18 @@ export default function SetupScreen() {
             ))}
           </div>
           <div className="text-sm text-gray-400 mt-2">
-            共 {enabledCategories.length} 个类别已启用
+            {enabledCategories.length} {t('categories_count')}
           </div>
         </div>
       </div>
 
       {/* Player Setup — Default 1 human + 1 AI */}
       <div className="mb-8 w-96">
-        <h3 className="text-xl mb-4 text-purple-200">玩家数量</h3>
+        <h3 className="text-xl mb-4 text-purple-200">{t('player_setup')}</h3>
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-gray-800/50 rounded-xl p-4">
             <div className="text-4xl mb-2">👤</div>
-            <div className="text-sm text-gray-400 mb-2">人类玩家</div>
+            <div className="text-sm text-gray-400 mb-2">{t('human_player')}</div>
             <div className="flex items-center gap-2 justify-center">
               <button
                 onClick={() => setHumanCount(Math.max(1, humanCount - 1))}
@@ -139,7 +140,7 @@ export default function SetupScreen() {
           </div>
           <div className="bg-gray-800/50 rounded-xl p-4">
             <div className="text-4xl mb-2">🤖</div>
-            <div className="text-sm text-gray-400 mb-2">电脑玩家</div>
+            <div className="text-sm text-gray-400 mb-2">{t('ai_player')}</div>
             <div className="flex items-center gap-2 justify-center">
               <button
                 onClick={() => handleAiCountChange(Math.max(0, aiCount - 1))}
@@ -155,9 +156,9 @@ export default function SetupScreen() {
         </div>
 
         <div className="mt-4 text-center text-gray-400">
-          共 {humanCount + aiCount} 名玩家
+          {humanCount + aiCount} {t('players_total')}
           <span className="block text-sm mt-1 text-green-400">
-            💡 默认：1 人类 + 1 AI（可直接开始）
+            {t('default_hint')}
           </span>
         </div>
       </div>
@@ -165,7 +166,7 @@ export default function SetupScreen() {
       {/* AI Difficulty Selection */}
       {aiCount > 0 && (
         <div className="mb-8 w-96">
-          <h3 className="text-xl mb-4 text-purple-200">AI 难度设置</h3>
+          <h3 className="text-xl mb-4 text-purple-200">{t('ai_difficulty_settings')}</h3>
           <div className="bg-gray-800/50 rounded-xl p-4 space-y-3">
             {Array.from({ length: aiCount }, (_, i) => (
               <div key={i} className="flex items-center justify-between">
@@ -194,26 +195,26 @@ export default function SetupScreen() {
       {/* Adaptive AI Status Display */}
       {aiCount > 0 && aiDifficulties.includes(AI_DIFFICULTY.ADAPTIVE) && adaptiveStatus && (
         <div className="mb-8 w-96">
-          <h3 className="text-xl mb-4 text-blue-200">🧠 自适应AI状态</h3>
+          <h3 className="text-xl mb-4 text-blue-200">{t('adaptive_ai_status')}</h3>
           <div className="bg-blue-900/30 border border-blue-500/50 rounded-xl p-4">
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="bg-black/30 rounded-lg p-2">
-                <div className="text-gray-400">已玩游戏局数</div>
+                <div className="text-gray-400">{t('games_played')}</div>
                 <div className="text-2xl font-bold text-blue-400">{adaptiveStatus.gamesPlayed}</div>
               </div>
               <div className="bg-black/30 rounded-lg p-2">
-                <div className="text-gray-400">玩家胜率</div>
+                <div className="text-gray-400">{t('player_win_rate')}</div>
                 <div className="text-2xl font-bold text-green-400">{adaptiveStatus.playerWinRate}%</div>
               </div>
               <div className="bg-black/30 rounded-lg p-2">
-                <div className="text-gray-400">玩家答题准确率</div>
+                <div className="text-gray-400">{t('player_accuracy')}</div>
                 <div className="text-2xl font-bold text-purple-400">{adaptiveStatus.playerAccuracy}%</div>
               </div>
               <div className="bg-black/30 rounded-lg p-2">
-                <div className="text-gray-400">建议难度</div>
+                <div className="text-gray-400">{t('suggested_difficulty')}</div>
                 <div className="text-2xl font-bold text-yellow-400">
-                  {adaptiveStatus.suggestedDifficulty === AI_DIFFICULTY.HARD ? '困难' :
-                   adaptiveStatus.suggestedDifficulty === AI_DIFFICULTY.EASY ? '简单' : '普通'}
+                  {adaptiveStatus.suggestedDifficulty === AI_DIFFICULTY.HARD ? t('suggested_hard') :
+                   adaptiveStatus.suggestedDifficulty === AI_DIFFICULTY.EASY ? t('suggested_easy') : t('suggested_normal')}
                 </div>
               </div>
             </div>
@@ -226,7 +227,7 @@ export default function SetupScreen() {
 
       {/* Theme Selection */}
       <div className="mb-8 w-96">
-        <h3 className="text-xl mb-4 text-purple-200">🎨 棋盘主题</h3>
+        <h3 className="text-xl mb-4 text-purple-200">{t('board_theme')}</h3>
         <div className="grid grid-cols-2 gap-3">
           {Object.entries(BOARD_THEMES).map(([key, theme]) => (
             <button
@@ -256,16 +257,15 @@ export default function SetupScreen() {
           onClick={goToMenu}
           className="px-8 py-3 bg-gray-700 rounded-xl font-bold hover:bg-gray-600"
         >
-          ← 返回
+          ← {t('exit')}
         </button>
         <button
           onClick={handleStart}
           className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl font-bold text-xl hover:scale-105 transition-all shadow-lg"
         >
-          🎮 选择棋子 →
+          🎮 {t('start_game_btn')} →
         </button>
       </div>
     </div>
   );
 }
-

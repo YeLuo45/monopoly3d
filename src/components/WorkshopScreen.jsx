@@ -4,26 +4,27 @@ import { useGameStore } from '../game/store';
 import useEditorStore from '../editor/editorStore';
 import { StarRating, DifficultySelector, DifficultyBadge, RatingModal } from './WorkshopRating';
 import { DIFFICULTY_LEVELS } from '../editor/editorTypes';
+import { t } from '../i18n';
 
 const TABS = [
-  { key: 'maps', label: '🗺️ 地图', icon: '🗺️' },
-  { key: 'questions', label: '📝 题库', icon: '📝' },
-  { key: 'themes', label: '🎨 主题', icon: '🎨' },
+  { key: 'maps', label: t('tab_maps'), icon: '🗺️' },
+  { key: 'questions', label: t('tab_questions'), icon: '📝' },
+  { key: 'themes', label: t('tab_themes'), icon: '🎨' },
 ];
 
 const SORT_OPTIONS = [
-  { key: 'popular', label: '🔥 热门' },
-  { key: 'recent', label: '⏰ 最新' },
-  { key: 'rating', label: '⭐ 评分' },
-  { key: 'difficulty', label: '⚡ 难度' },
+  { key: 'popular', label: t('sort_popular') },
+  { key: 'recent', label: t('sort_recent') },
+  { key: 'rating', label: t('sort_rating') },
+  { key: 'difficulty', label: t('sort_difficulty') },
 ];
 
 const FILTER_OPTIONS = [
-  { key: 'all', label: '全部' },
-  { key: 'downloaded', label: '已下载' },
-  { key: 'subscribed', label: '已收藏' },
-  { key: 'easy', label: '⭐ 入门' },
-  { key: 'hard', label: '💀 困难' },
+  { key: 'all', label: t('filter_all') },
+  { key: 'downloaded', label: t('filter_downloaded') },
+  { key: 'subscribed', label: t('filter_subscribed') },
+  { key: 'easy', label: t('filter_easy_star') },
+  { key: 'hard', label: t('filter_hard_star') },
 ];
 
 function MapCard({ map, onDownload, onSubscribe, isSubscribed, isDownloaded, onRate }) {
@@ -47,7 +48,7 @@ function MapCard({ map, onDownload, onSubscribe, isSubscribed, isDownloaded, onR
       </div>
       
       <p className="text-gray-400 text-sm line-clamp-2">
-        {map.description || '暂无描述'}
+        {map.description || t('no_description')}
       </p>
       
       {/* Tags */}
@@ -87,7 +88,7 @@ function MapCard({ map, onDownload, onSubscribe, isSubscribed, isDownloaded, onR
               : 'bg-indigo-600 hover:bg-indigo-500 text-white'
           }`}
         >
-          {isDownloaded ? '✓ 已下载' : downloading ? '下载中...' : '▼ 下载'}
+          {isDownloaded ? t('downloaded') : downloading ? t('downloading') : t('download')}
         </button>
         <button
           onClick={() => onSubscribe(map.id)}
@@ -113,7 +114,7 @@ function PublishModal({ type, onClose, onPublish }) {
   const gameStore = useGameStore();
 
   const handlePublish = async () => {
-    if (!name.trim()) return alert('请输入名称');
+    if (!name.trim()) return alert(t('enter_name'));
     setSubmitting(true);
 
     let result;
@@ -141,32 +142,44 @@ function PublishModal({ type, onClose, onPublish }) {
         result = await onPublish({ ...result.data, title: name.trim(), name: name.trim() });
       }
     } else {
-      result = { error: '主题发布暂未实现' };
+      result = { error: t('publish_not_ready') };
     }
 
     setSubmitting(false);
     if (result.success) {
-      alert('发布成功！');
+      alert(t('publish_success'));
       onClose();
     } else {
-      alert(`发布失败: ${result.error}`);
+      alert(`${t('publish_failed')} ${result.error}`);
     }
+  };
+
+  const getPublishTypeLabel = () => {
+    if (type === 'maps') return t('publish_type_map');
+    if (type === 'questions') return t('publish_type_question');
+    return t('publish_type_theme');
+  };
+
+  const getNamePlaceholder = () => {
+    if (type === 'maps') return t('name_placeholder_map');
+    if (type === 'questions') return t('name_placeholder_question');
+    return '';
   };
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
       <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-md flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-bold text-white">
-          发布{type === 'maps' ? '地图' : type === 'questions' ? '题库' : '主题'}
+          {t('publish_title')}{getPublishTypeLabel()}
         </h2>
         
         <div>
-          <label className="text-gray-300 text-sm">名称 *</label>
+          <label className="text-gray-300 text-sm">{t('name_label')}</label>
           <input
             type="text"
             value={name}
             onChange={e => setName(e.target.value)}
-            placeholder={type === 'maps' ? '我的地图' : '题库标题'}
+            placeholder={getNamePlaceholder()}
             className="w-full mt-1 bg-gray-700 text-white rounded-lg px-4 py-2"
             maxLength={type === 'maps' ? 20 : 50}
           />
@@ -180,23 +193,23 @@ function PublishModal({ type, onClose, onPublish }) {
         )}
         
         <div>
-          <label className="text-gray-300 text-sm">简介</label>
+          <label className="text-gray-300 text-sm">{t('description_label')}</label>
           <textarea
             value={description}
             onChange={e => setDescription(e.target.value)}
-            placeholder="简单描述这个作品..."
+            placeholder={t('description_placeholder')}
             className="w-full mt-1 bg-gray-700 text-white rounded-lg px-4 py-2 h-20 resize-none"
             maxLength={100}
           />
         </div>
         
         <div>
-          <label className="text-gray-300 text-sm">标签（用逗号分隔，最多3个）</label>
+          <label className="text-gray-300 text-sm">{t('tags_label')}</label>
           <input
             type="text"
             value={tags}
             onChange={e => setTags(e.target.value)}
-            placeholder="教学, 娱乐, 挑战"
+            placeholder={t('tags_placeholder')}
             className="w-full mt-1 bg-gray-700 text-white rounded-lg px-4 py-2"
           />
         </div>
@@ -206,14 +219,14 @@ function PublishModal({ type, onClose, onPublish }) {
             onClick={onClose}
             className="flex-1 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
           >
-            取消
+            {t('cancel')}
           </button>
           <button
             onClick={handlePublish}
             disabled={submitting || !name.trim()}
             className="flex-1 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 disabled:opacity-50"
           >
-            {submitting ? '发布中...' : '确认发布'}
+            {submitting ? t('publishing') : t('confirm_publish')}
           </button>
         </div>
       </div>
@@ -302,12 +315,23 @@ export default function WorkshopScreen() {
     setCurrentScreen('setup');
   };
 
+  const getPublishButtonLabel = () => {
+    if (activeTab === 'maps') return t('publish_type_map');
+    if (activeTab === 'questions') return t('publish_type_question');
+    return t('publish_type_theme');
+  };
+
+  const getEmptyMessage = () => {
+    if (filter !== 'all') return t('no_content_found');
+    return t('no_content_try_publish');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white p-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <button onClick={goToMenu} className="text-2xl">←</button>
-        <h1 className="text-2xl font-bold">🎨 创意工坊</h1>
+        <h1 className="text-2xl font-bold">{t('workshop_title')}</h1>
         <div />
       </div>
 
@@ -361,7 +385,7 @@ export default function WorkshopScreen() {
       {/* Difficulty Legend */}
       {activeTab === 'maps' && (
         <div className="flex flex-wrap gap-2 mb-4 p-3 bg-gray-800/50 rounded-lg">
-          <span className="text-xs text-gray-400 mr-2">难度:</span>
+          <span className="text-xs text-gray-400 mr-2">{t('difficulty_legend')}</span>
           {Object.entries(DIFFICULTY_LEVELS).map(([level, info]) => (
             <span 
               key={level}
@@ -379,26 +403,26 @@ export default function WorkshopScreen() {
         onClick={() => setShowPublish(activeTab)}
         className="w-full mb-4 py-3 bg-gradient-to-r from-purple-600 to-pink-500 rounded-xl font-bold text-lg hover:opacity-90 transition-opacity"
       >
-        + 发布{activeTab === 'maps' ? '地图' : activeTab === 'questions' ? '题库' : '主题'}
+        + {t('publish_title')}{getPublishButtonLabel()}
       </button>
 
       {/* Content */}
       {isLoading ? (
-        <div className="text-center py-20 text-gray-400">加载中...</div>
+        <div className="text-center py-20 text-gray-400">{t('loading')}</div>
       ) : error ? (
         <div className="text-center py-20">
           <p className="text-red-400 mb-2">{error}</p>
-          <p className="text-gray-500 text-sm">请确保已在 Supabase 中执行 workshop.sql</p>
+          <p className="text-gray-500 text-sm">{t('ensure_workshop_sql')}</p>
           <button
             onClick={() => handleTabChange(activeTab)}
             className="mt-4 px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600"
           >
-            重试
+            {t('retry')}
           </button>
         </div>
       ) : sortedList.length === 0 ? (
         <div className="text-center py-20 text-gray-400">
-          {filter !== 'all' ? '没有找到符合条件的内容' : '暂无内容，试试发布第一个作品吧！'}
+          {getEmptyMessage()}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -417,14 +441,14 @@ export default function WorkshopScreen() {
                     onClick={() => handlePlayMap(item)}
                     className="flex-1 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-medium"
                   >
-                    🎮 开始游戏
+                    {t('start_game')}
                   </button>
                 )}
                 <button
                   onClick={() => setRatingItem({ ...item, type: activeTab === 'maps' ? 'map' : activeTab === 'questions' ? 'question' : 'theme' })}
                   className="flex-1 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg text-sm font-medium"
                 >
-                  ⭐ 评分
+                  {t('rate_map')}
                 </button>
               </div>
             </div>
@@ -435,7 +459,7 @@ export default function WorkshopScreen() {
       {/* Offline notice */}
       {error && (
         <div className="mt-4 p-3 bg-gray-800 rounded-xl text-center text-gray-400 text-sm">
-          📴 离线模式 — 显示已下载的内容
+          {t('offline_mode')}
         </div>
       )}
 
@@ -447,7 +471,7 @@ export default function WorkshopScreen() {
           onPublish={async (data) => {
             if (showPublish === 'maps') return useWorkshopStore.getState().publishMap(data);
             if (showPublish === 'questions') return useWorkshopStore.getState().publishQuestions(data);
-            return { error: '暂未实现' };
+            return { error: t('publish_not_ready') };
           }}
         />
       )}
