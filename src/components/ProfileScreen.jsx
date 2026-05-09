@@ -1,18 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useGameStore } from '../game/store';
 import { useAchievementStore } from '../features/achievement/achievementStore';
+import { t } from '../i18n';
 
-const CATEGORY_NAMES = {
-  math: '📐 数学',
-  shape: '🔷 形状',
-  time: '⏰ 时间',
-  geography: '🌍 地理',
-  science: '🔬 科学',
-  reading: '📖 阅读',
-  life: '🏠 生活',
-  emotion: '💭 情感',
-  animal: '🐾 动物',
-};
+// Category labels - wrapped in function to avoid module-level t() calls
+function getCategoryNames() {
+  return {
+    math: '📐 数学',
+    shape: '🔷 形状',
+    time: '⏰ 时间',
+    geography: '🌍 地理',
+    science: '🔬 科学',
+    reading: '📖 阅读',
+    life: '🏠 生活',
+    emotion: '💭 情感',
+    animal: '🐾 动物',
+  };
+}
 
 const CATEGORY_ICONS = {
   math: '📐',
@@ -99,7 +103,7 @@ function AIStatsContent({ studentId }) {
   if (isLoading) {
     return (
       <div className="bg-gray-800/50 rounded-xl p-6 text-center">
-        <div className="text-gray-400">加载中...</div>
+        <div className="text-gray-400">{t('loading')}</div>
       </div>
     );
   }
@@ -108,39 +112,39 @@ function AIStatsContent({ studentId }) {
     <>
       {/* Stats Overview */}
       <div className="bg-gray-800/50 rounded-xl p-6">
-        <h3 className="text-xl font-bold mb-6 text-center">🧠 AI学习记录</h3>
+        <h3 className="text-xl font-bold mb-6 text-center">{t('ai_learning_records')}</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-gray-900/50 rounded-xl p-4 text-center">
             <div className="text-4xl mb-2">📝</div>
             <div className="text-3xl font-bold text-white">{aiStats.totalDecisions}</div>
-            <div className="text-gray-400 text-sm">总决策数</div>
+            <div className="text-gray-400 text-sm">{t('total_decisions')}</div>
           </div>
           <div className="bg-gray-900/50 rounded-xl p-4 text-center">
             <div className="text-4xl mb-2">🏠</div>
             <div className="text-3xl font-bold text-blue-400">{aiStats.buyDecisions}</div>
-            <div className="text-gray-400 text-sm">购房决策</div>
+            <div className="text-gray-400 text-sm">{t('buy_decisions')}</div>
           </div>
           <div className="bg-gray-900/50 rounded-xl p-4 text-center">
             <div className="text-4xl mb-2">⏭️</div>
             <div className="text-3xl font-bold text-yellow-400">{aiStats.passDecisions}</div>
-            <div className="text-gray-400 text-sm">跳过决策</div>
+            <div className="text-gray-400 text-sm">{t('pass_decisions')}</div>
           </div>
           <div className="bg-gray-900/50 rounded-xl p-4 text-center">
             <div className="text-4xl mb-2">🏗️</div>
             <div className="text-3xl font-bold text-purple-400">{aiStats.buildDecisions}</div>
-            <div className="text-gray-400 text-sm">建屋决策</div>
+            <div className="text-gray-400 text-sm">{t('build_decisions')}</div>
           </div>
         </div>
       </div>
 
       {/* Recent Decisions from saved games */}
       <div className="bg-gray-800/50 rounded-xl p-6">
-        <h3 className="text-lg font-bold mb-4">📋 AI决策历史</h3>
+        <h3 className="text-lg font-bold mb-4">{t('ai_decision_history')}</h3>
         {aiStats.recentDecisions.length === 0 ? (
           <div className="text-center text-gray-400 py-8">
             <div className="text-5xl mb-4">📭</div>
-            <p>暂无AI决策记录</p>
-            <p className="text-sm mt-2">与AI对战时，AI的决策会被记录下来！</p>
+            <p>{t('no_ai_decisions_yet')}</p>
+            <p className="text-sm mt-2">{t('ai_decisions_recorded')}</p>
           </div>
         ) : (
           <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -150,13 +154,13 @@ function AIStatsContent({ studentId }) {
                   <span className="text-2xl">{getDecisionIcon(decision.type)}</span>
                   <div>
                     <div className="font-bold">
-                      {decision.type === 'buy' && `购房: ${decision.tileName || '未知'}`}
-                      {decision.type === 'pass' && '跳过购买'}
-                      {decision.type === 'build' && `建屋: ${decision.tileName || '未知'}`}
-                      {decision.type === 'trade' && '交易'}
+                      {decision.type === 'buy' && `${t('buy_property_decision')}: ${decision.tileName || t('unknown')}`}
+                      {decision.type === 'pass' && t('pass_purchase')}
+                      {decision.type === 'build' && `${t('build_house')}: ${decision.tileName || t('unknown')}`}
+                      {decision.type === 'trade' && t('trade')}
                     </div>
                     <div className="text-sm text-gray-400">
-                      ¥{decision.playerMoney} | 位置:{decision.playerPosition} | 决策:{decision.decision?.toUpperCase()}
+                      ¥{decision.playerMoney} | {t('position')}:{decision.playerPosition} | {t('decision')}:{decision.decision?.toUpperCase()}
                     </div>
                   </div>
                 </div>
@@ -174,7 +178,7 @@ function AIStatsContent({ studentId }) {
 }
 
 // Calculate level from games played
-function calculateLevel(gamesPlayed) {
+function calculateLevel(gamesPlayed, t) {
   if (gamesPlayed >= 100) return { level: 10, title: '传奇玩家', progress: 100 };
   if (gamesPlayed >= 75) return { level: 9, title: '史诗大师', progress: ((gamesPlayed - 75) / 25) * 100 };
   if (gamesPlayed >= 50) return { level: 8, title: '钻石王者', progress: ((gamesPlayed - 50) / 25) * 100 };
@@ -248,7 +252,7 @@ export default function ProfileScreen() {
   };
 
   const handleResetProfile = () => {
-    if (confirm('确定要重置所有数据吗？此操作不可撤销！')) {
+    if (confirm(t('confirm_reset_data'))) {
       localStorage.removeItem('monopoly3d_student_profiles');
       localStorage.removeItem('monopoly3d_achievements');
       window.location.reload();
@@ -279,13 +283,13 @@ export default function ProfileScreen() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-yellow-400 to-pink-500 bg-clip-text text-transparent">
-            👤 个人中心
+            👤 {t('personal_center')}
           </h1>
           <button
             onClick={() => useGameStore.getState().goToMenu?.() || window.history.back()}
             className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-bold transition-all"
           >
-            ← 返回
+            ← {t('back')}
           </button>
         </div>
 
@@ -314,18 +318,18 @@ export default function ProfileScreen() {
                     onClick={handleSaveName}
                     className="px-4 py-2 bg-green-500 hover:bg-green-400 rounded-xl font-bold"
                   >
-                    保存
+                    {t('save')}
                   </button>
                   <button
                     onClick={() => setIsEditingName(false)}
                     className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-xl font-bold"
                   >
-                    取消
+                    {t('cancel')}
                   </button>
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
-                  <h2 className="text-2xl font-bold">{studentId || '访客'}</h2>
+                  <h2 className="text-2xl font-bold">{studentId || t('guest')}</h2>
                   <button
                     onClick={() => { setNewName(studentId || ''); setIsEditingName(true); }}
                     className="text-gray-400 hover:text-white text-sm"
@@ -356,12 +360,12 @@ export default function ProfileScreen() {
         {/* Tabs */}
         <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
           {[
-            { id: 'stats', label: '📊 统计数据' },
-            { id: 'history', label: '📜 游戏记录' },
-            { id: 'wrong', label: '📖 错题本' },
-            { id: 'ai', label: '🤖 AI对战' },
-            { id: 'ai_stats', label: '🧠 AI战绩' },
-            { id: 'settings', label: '⚙️ 设置' },
+            { id: 'stats', label: '📊 ' + t('stats_tab') },
+            { id: 'history', label: '📜 ' + t('history_tab') },
+            { id: 'wrong', label: '📖 ' + t('wrong_answers_tab') },
+            { id: 'ai', label: '🤖 ' + t('ai_battle_tab') },
+            { id: 'ai_stats', label: '🧠 ' + t('ai_stats_tab') },
+            { id: 'settings', label: '⚙️ ' + t('settings_tab') },
           ].map(tab => (
             <button
               key={tab.id}
@@ -383,42 +387,42 @@ export default function ProfileScreen() {
             <div className="bg-gray-800/50 rounded-xl p-4 text-center">
               <div className="text-4xl mb-2">🎮</div>
               <div className="text-3xl font-bold text-white">{profileStats?.gamesPlayed || 0}</div>
-              <div className="text-gray-400 text-sm">总场次</div>
+              <div className="text-gray-400 text-sm">{t('total_games')}</div>
             </div>
             <div className="bg-gray-800/50 rounded-xl p-4 text-center">
               <div className="text-4xl mb-2">🏆</div>
               <div className="text-3xl font-bold text-yellow-400">{profileStats?.wins || 0}</div>
-              <div className="text-gray-400 text-sm">胜利次数</div>
+              <div className="text-gray-400 text-sm">{t('wins')}</div>
             </div>
             <div className="bg-gray-800/50 rounded-xl p-4 text-center">
               <div className="text-4xl mb-2">📈</div>
               <div className="text-3xl font-bold text-green-400">{winRate}%</div>
-              <div className="text-gray-400 text-sm">胜率</div>
+              <div className="text-gray-400 text-sm">{t('win_rate')}</div>
             </div>
             <div className="bg-gray-800/50 rounded-xl p-4 text-center">
               <div className="text-4xl mb-2">🔥</div>
               <div className="text-3xl font-bold text-orange-400">{profileStats?.currentProgress?.correctStreak || 0}</div>
-              <div className="text-gray-400 text-sm">当前连胜</div>
+              <div className="text-gray-400 text-sm">{t('current_streak')}</div>
             </div>
             <div className="bg-gray-800/50 rounded-xl p-4 text-center">
               <div className="text-4xl mb-2">🏠</div>
               <div className="text-3xl font-bold text-blue-400">{profileStats?.propertiesBought || 0}</div>
-              <div className="text-gray-400 text-sm">购买地产</div>
+              <div className="text-gray-400 text-sm">{t('properties_bought_stat')}</div>
             </div>
             <div className="bg-gray-800/50 rounded-xl p-4 text-center">
               <div className="text-4xl mb-2">🏗️</div>
               <div className="text-3xl font-bold text-purple-400">{profileStats?.housesBuilt || 0}</div>
-              <div className="text-gray-400 text-sm">建造房屋</div>
+              <div className="text-gray-400 text-sm">{t('houses_built')}</div>
             </div>
             <div className="bg-gray-800/50 rounded-xl p-4 text-center">
               <div className="text-4xl mb-2">❓</div>
               <div className="text-3xl font-bold text-cyan-400">{profileStats?.totalQuestionsAnswered || 0}</div>
-              <div className="text-gray-400 text-sm">答题总数</div>
+              <div className="text-gray-400 text-sm">{t('questions_answered_stat')}</div>
             </div>
             <div className="bg-gray-800/50 rounded-xl p-4 text-center">
               <div className="text-4xl mb-2">💰</div>
               <div className="text-3xl font-bold text-emerald-400">{profileStats?.maxMoneyEarned || 0}</div>
-              <div className="text-gray-400 text-sm">最高财富</div>
+              <div className="text-gray-400 text-sm">{t('max_coins_stat')}</div>
             </div>
           </div>
         )}
@@ -429,18 +433,18 @@ export default function ProfileScreen() {
             {gameHistory.length === 0 ? (
               <div className="p-8 text-center text-gray-400">
                 <div className="text-5xl mb-4">📭</div>
-                <p>暂无游戏记录</p>
+                <p>{t('no_game_history')}</p>
               </div>
             ) : (
               <div className="max-h-96 overflow-y-auto">
                 <table className="w-full">
                   <thead className="bg-gray-900/50 sticky top-0">
                     <tr className="text-left text-gray-400 text-sm">
-                      <th className="px-4 py-3">日期</th>
-                      <th className="px-4 py-3">排名</th>
-                      <th className="px-4 py-3">正确率</th>
-                      <th className="px-4 py-3">时长</th>
-                      <th className="px-4 py-3">题目</th>
+                      <th className="px-4 py-3">{t('date')}</th>
+                      <th className="px-4 py-3">{t('rank')}</th>
+                      <th className="px-4 py-3">{t('accuracy')}</th>
+                      <th className="px-4 py-3">{t('duration')}</th>
+                      <th className="px-4 py-3">{t('questions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -471,13 +475,13 @@ export default function ProfileScreen() {
         {/* Wrong Answers Tab */}
         {activeTab === 'wrong' && (
           <div className="space-y-4">
-            {Object.keys(CATEGORY_NAMES).length === 0 ? (
+            {Object.keys(getCategoryNames()).length === 0 ? (
               <div className="bg-gray-800/50 rounded-xl p-8 text-center text-gray-400">
                 <div className="text-5xl mb-4">📖</div>
-                <p>暂无答题数据</p>
+                <p>{t('no_answer_data')}</p>
               </div>
             ) : (
-              Object.entries(CATEGORY_NAMES).map(([cat, name]) => {
+              Object.entries(getCategoryNames()).map(([cat, name]) => {
                 const stats = wrongAnswersByCategory[cat] || { total: 0, correct: 0 };
                 const wrong = stats.total - stats.correct;
                 const accuracy = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
@@ -489,8 +493,8 @@ export default function ProfileScreen() {
                         <span className="font-bold">{name}</span>
                       </div>
                       <div className="flex items-center gap-4">
-                        <span className="text-gray-400 text-sm">正确率: <span className={`font-bold ${accuracy >= 80 ? 'text-green-400' : accuracy >= 50 ? 'text-yellow-400' : 'text-red-400'}`}>{accuracy}%</span></span>
-                        <span className="text-gray-400 text-sm">错题: <span className="font-bold text-red-400">{wrong}</span></span>
+                        <span className="text-gray-400 text-sm">{t('correct_rate')}: <span className={`font-bold ${accuracy >= 80 ? 'text-green-400' : accuracy >= 50 ? 'text-yellow-400' : 'text-red-400'}`}>{accuracy}%</span></span>
+                        <span className="text-gray-400 text-sm">{t('wrong_answers_count')}: <span className="font-bold text-red-400">{wrong}</span></span>
                       </div>
                     </div>
                     <div className="h-2 bg-black/30 rounded-full overflow-hidden">
@@ -500,8 +504,8 @@ export default function ProfileScreen() {
                       />
                     </div>
                     <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>正确: {stats.correct}</span>
-                      <span>总计: {stats.total}</span>
+                      <span>{t('correct')}: {stats.correct}</span>
+                      <span>{t('total')}: {stats.total}</span>
                     </div>
                   </div>
                 );
@@ -513,28 +517,28 @@ export default function ProfileScreen() {
         {/* AI Battle Tab */}
         {activeTab === 'ai' && (
           <div className="bg-gray-800/50 rounded-xl p-6">
-            <h3 className="text-xl font-bold mb-6 text-center">🤖 AI对战记录</h3>
+            <h3 className="text-xl font-bold mb-6 text-center">{t('ai_battle_record')}</h3>
             <div className="grid grid-cols-3 gap-4 mb-6">
               <div className="bg-gray-900/50 rounded-xl p-4 text-center">
                 <div className="text-4xl mb-2">🏆</div>
                 <div className="text-3xl font-bold text-green-400">{aiBattleRecord.wins}</div>
-                <div className="text-gray-400 text-sm">胜利</div>
+                <div className="text-gray-400 text-sm">{t('victory')}</div>
               </div>
               <div className="bg-gray-900/50 rounded-xl p-4 text-center">
                 <div className="text-4xl mb-2">💀</div>
                 <div className="text-3xl font-bold text-red-400">{aiBattleRecord.losses}</div>
-                <div className="text-gray-400 text-sm">失败</div>
+                <div className="text-gray-400 text-sm">{t('defeat')}</div>
               </div>
               <div className="bg-gray-900/50 rounded-xl p-4 text-center">
                 <div className="text-4xl mb-2">📊</div>
                 <div className="text-3xl font-bold text-blue-400">
                   {aiBattleRecord.total > 0 ? Math.round((aiBattleRecord.wins / aiBattleRecord.total) * 100) : 0}%
                 </div>
-                <div className="text-gray-400 text-sm">胜率</div>
+                <div className="text-gray-400 text-sm">{t('win_rate')}</div>
               </div>
             </div>
             {aiBattleRecord.total === 0 && (
-              <p className="text-center text-gray-400">开始游戏来积累AI对战记录吧！</p>
+              <p className="text-center text-gray-400">{t('start_game_record')}</p>
             )}
           </div>
         )}
@@ -550,10 +554,10 @@ export default function ProfileScreen() {
         {activeTab === 'settings' && (
           <div className="space-y-4">
             <div className="bg-gray-800/50 rounded-xl p-6">
-              <h3 className="text-xl font-bold mb-4">👤 账号设置</h3>
+              <h3 className="text-xl font-bold mb-4">{t('account_settings')}</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-gray-400 text-sm mb-2">玩家名称</label>
+                  <label className="block text-gray-400 text-sm mb-2">{t('player_name')}</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -566,7 +570,7 @@ export default function ProfileScreen() {
                       onClick={handleSaveName}
                       className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl font-bold hover:scale-105 transition-all"
                     >
-                      保存
+                      {t('save')}
                     </button>
                   </div>
                 </div>
@@ -574,21 +578,21 @@ export default function ProfileScreen() {
             </div>
 
             <div className="bg-gray-800/50 rounded-xl p-6">
-              <h3 className="text-xl font-bold mb-4">⚠️ 数据管理</h3>
-              <p className="text-gray-400 text-sm mb-4">重置将清除所有游戏记录、成就和设置，此操作不可撤销！</p>
+              <h3 className="text-xl font-bold mb-4">{t('data_management')}</h3>
+              <p className="text-gray-400 text-sm mb-4">{t('reset_warning')}</p>
               <button
                 onClick={handleResetProfile}
                 className="w-full px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 rounded-xl font-bold hover:scale-105 transition-all"
               >
-                🗑️ 重置所有数据
+                🗑️ {t('reset_all_data')}
               </button>
             </div>
 
             <div className="bg-gray-800/50 rounded-xl p-6">
-              <h3 className="text-xl font-bold mb-4">ℹ️ 关于</h3>
+              <h3 className="text-xl font-bold mb-4">{t('about')}</h3>
               <div className="text-gray-400 text-sm space-y-1">
-                <p>大富翁3D教育版</p>
-                <p>版本: 1.0.0</p>
+                <p>{t('app_title')}</p>
+                <p>{t('version')}: 1.0.0</p>
                 <p>© 2026 教育游戏工作室</p>
               </div>
             </div>

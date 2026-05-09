@@ -2,24 +2,25 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useGameStore } from '../../game/store';
 import { 
   getClassManager, 
-  MessageTypes, 
+  MessageTypes,
   StudentStatus,
   createMessage,
   sendMessage 
 } from '../../communication/broadcastChannel';
+import { t } from '../../i18n';
 
 // Category labels
-const CATEGORY_LABELS = {
-  math: '🔢 数学',
-  shape: '⬡ 形状',
-  time: '⏰ 时间',
-  geography: '🌍 地理',
-  science: '🔬 科学',
-  reading: '📖 阅读',
-  life: '🌱 生活',
-  emotion: '💝 情感',
-  animal: '🐾 动物',
-};
+const getCategoryLabels = () => ({
+  math: t('category_math'),
+  shape: t('category_shape'),
+  time: t('category_time'),
+  geography: t('category_geography'),
+  science: t('category_science'),
+  reading: t('category_reading'),
+  life: t('category_life'),
+  emotion: t('category_emotion'),
+  animal: t('category_animal'),
+});
 
 // Status colors
 const STATUS_COLORS = {
@@ -122,7 +123,7 @@ export default function TeacherPage() {
   // Handle send assignment
   const handleSendAssignment = useCallback(() => {
     if (!assignmentTitle.trim()) {
-      alert('请输入作业标题');
+      alert(t('enter_homework_title_alert'));
       return;
     }
     
@@ -132,7 +133,7 @@ export default function TeacherPage() {
       content: assignmentContent.trim(),
       dueDate: assignmentDueDate,
       createdAt: new Date().toISOString(),
-      assignedBy: '教师',
+      assignedBy: t('assigned_by_label'),
     };
     
     classManager.sendAssignment(assignment);
@@ -142,13 +143,13 @@ export default function TeacherPage() {
     setAssignmentContent('');
     setAssignmentDueDate('');
     
-    alert('作业已发送给所有学生');
+    alert(t('homework_sent_success'));
   }, [classManager, assignmentTitle, assignmentContent, assignmentDueDate]);
   
   // Handle kick student
   const handleKickStudent = useCallback((studentId, reason) => {
-    if (confirm(`确定要将该学生移出游戏吗？`)) {
-      classManager.kickStudent(studentId, reason || '教师移出');
+    if (confirm(t('confirm_remove_student'))) {
+      classManager.kickStudent(studentId, reason || t('removed_by_teacher'));
     }
   }, [classManager]);
   
@@ -157,7 +158,7 @@ export default function TeacherPage() {
     // Load all student profiles
     const profilesJson = localStorage.getItem('monopoly3d_student_profiles');
     if (!profilesJson) {
-      alert('暂无学生数据可导出');
+      alert(t('no_data_to_export'));
       return;
     }
     
@@ -182,7 +183,7 @@ export default function TeacherPage() {
     });
     
     if (wrongAnswers.length === 0) {
-      alert('暂无错题记录');
+      alert(t('no_wrong_to_export'));
       return;
     }
     
@@ -202,7 +203,7 @@ export default function TeacherPage() {
       totalStudents: Object.keys(profiles).length,
       categorySummary: Object.keys(groupedByCategory).map(cat => ({
         category: cat,
-        categoryLabel: CATEGORY_LABELS[cat] || cat,
+        categoryLabel: getCategoryLabels()[cat] || cat,
         count: groupedByCategory[cat].length,
       })),
       wrongAnswers: groupedByCategory,
@@ -227,8 +228,8 @@ export default function TeacherPage() {
             <div className="flex items-center gap-4">
               <div className="text-4xl">🎓</div>
               <div>
-                <h1 className="text-2xl font-bold text-white">教师端</h1>
-                <p className="text-purple-300 text-sm">教学辅助工具</p>
+                <h1 className="text-2xl font-bold text-white">{t('teacher_terminal')}</h1>
+                <p className="text-purple-300 text-sm">{t('teaching_auxiliary_tool')}</p>
               </div>
             </div>
             
@@ -236,15 +237,15 @@ export default function TeacherPage() {
             <div className="flex gap-4">
               <div className="bg-black/30 rounded-xl px-4 py-2 text-center">
                 <div className="text-2xl font-bold text-green-400">{classStats.onlineCount}/{classStats.totalStudents}</div>
-                <div className="text-xs text-gray-400">在线学生</div>
+                <div className="text-xs text-gray-400">{t('online')}</div>
               </div>
               <div className="bg-black/30 rounded-xl px-4 py-2 text-center">
                 <div className="text-2xl font-bold text-purple-400">{classStats.avgAccuracy}%</div>
-                <div className="text-xs text-gray-400">班级正确率</div>
+                <div className="text-xs text-gray-400">{t('class_accuracy')}</div>
               </div>
               <div className="bg-black/30 rounded-xl px-4 py-2 text-center">
                 <div className="text-2xl font-bold text-yellow-400">{classStats.totalQuestions}</div>
-                <div className="text-xs text-gray-400">总答题数</div>
+                <div className="text-xs text-gray-400">{t('total_questions_stat')}</div>
               </div>
             </div>
           </div>
@@ -256,25 +257,25 @@ export default function TeacherPage() {
             active={activeTab === 'students'} 
             onClick={() => setActiveTab('students')}
             icon="👥"
-            label="学生列表"
+            label={t('student_list')}
           />
           <TabButton 
             active={activeTab === 'observe'} 
             onClick={() => setActiveTab('observe')}
             icon="👁️"
-            label="观战"
+            label={t('observe')}
           />
           <TabButton 
             active={activeTab === 'homework'} 
             onClick={() => setActiveTab('homework')}
             icon="📝"
-            label="作业布置"
+            label={t('homework')}
           />
           <TabButton 
             active={activeTab === 'wrongbook'} 
             onClick={() => setActiveTab('wrongbook')}
             icon="📕"
-            label="错题本"
+            label={t('wrong_book')}
           />
         </div>
         
@@ -317,13 +318,13 @@ export default function TeacherPage() {
         {/* Footer */}
         <div className="p-4 border-t border-purple-500/30 bg-black/20 flex justify-between items-center">
           <div className="text-gray-400 text-sm">
-            教学模式已开启 · 学生界面已简化
+            {t('teaching_mode_enabled')}
           </div>
           <button
             onClick={() => window.location.reload()}
             className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded-lg text-white text-sm font-bold"
           >
-            退出教师端
+            {t('exit_teacher_mode')}
           </button>
         </div>
       </div>
@@ -368,8 +369,8 @@ function StudentListPanel({ students, selectedStudent, onFreeze, onObserve, onKi
     return (
       <div className="text-center py-12">
         <div className="text-6xl mb-4">📭</div>
-        <p className="text-purple-300 text-lg">暂无学生连接</p>
-        <p className="text-gray-400 text-sm mt-2">等待学生加入游戏...</p>
+        <p className="text-purple-300 text-lg">{t('no_students_connected_hint')}</p>
+        <p className="text-gray-400 text-sm mt-2">{t('waiting_for_students_join')}</p>
       </div>
     );
   }
@@ -419,7 +420,7 @@ function StudentCard({ student, isSelected, onFreeze, onObserve, onKick }) {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-2 mb-3 text-sm">
         <div>
-          <span className="text-gray-400">正确率:</span>
+          <span className="text-gray-400">{t('accuracy_label')}</span>
           <span className={`ml-1 font-bold ${
             accuracy >= 80 ? 'text-green-400' : accuracy >= 60 ? 'text-yellow-400' : 'text-red-400'
           }`}>
@@ -427,14 +428,14 @@ function StudentCard({ student, isSelected, onFreeze, onObserve, onKick }) {
           </span>
         </div>
         <div>
-          <span className="text-gray-400">答题:</span>
+          <span className="text-gray-400">{t('questions_label')}</span>
           <span className="ml-1 text-white">{student.questionsAnswered || 0}</span>
         </div>
       </div>
       
       {/* Position */}
       <div className="text-xs text-gray-400 mb-3">
-        位置: 第{student.currentPosition || 0}格 · ${student.money || 0}
+        {t('position_label')} {student.currentPosition || 0}{t('grid_suffix', '格')} · ${student.money || 0}
       </div>
       
       {/* Actions */}
@@ -447,7 +448,7 @@ function StudentCard({ student, isSelected, onFreeze, onObserve, onKick }) {
               : 'bg-blue-600/50 hover:bg-blue-600 text-white'
           }`}
         >
-          👁️ {isSelected ? '已观战' : '观战'}
+          👁️ {isSelected ? t('already_observing') : t('observing_label')}
         </button>
         <button
           onClick={onFreeze}
@@ -457,13 +458,13 @@ function StudentCard({ student, isSelected, onFreeze, onObserve, onKick }) {
               : 'bg-yellow-600/50 hover:bg-yellow-600 text-white'
           }`}
         >
-          {student.status === 'frozen' ? '解冻' : '冻结'}
+          {student.status === 'frozen' ? t('unfreeze_label') : t('freeze_label')}
         </button>
         <button
           onClick={onKick}
           className="px-2 py-1 bg-red-600/50 hover:bg-red-600 rounded text-xs font-bold text-white"
         >
-          移出
+          {t('remove_label')}
         </button>
       </div>
     </div>
@@ -479,12 +480,12 @@ function ObservePanel({ students, selectedStudent, onSelect }) {
     return (
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-white">正在观战: {student?.name}</h3>
+          <h3 className="text-lg font-bold text-white">{t('currently_observing')} {student?.name}</h3>
           <button
             onClick={() => onSelect(selectedStudent)}
             className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg text-white text-sm font-bold"
           >
-            停止观战
+            {t('stop_observing_label')}
           </button>
         </div>
         
@@ -492,31 +493,31 @@ function ObservePanel({ students, selectedStudent, onSelect }) {
         <div className="bg-black/30 rounded-xl p-6">
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-black/30 rounded-lg p-4 text-center">
-              <div className="text-gray-400 text-xs mb-1">当前位置</div>
-              <div className="text-3xl font-bold text-white">第{student?.currentPosition || 0}格</div>
+              <div className="text-gray-400 text-xs mb-1">{t('current_tile_position')}</div>
+              <div className="text-3xl font-bold text-white">{t('position_label')} {student?.currentPosition || 0}</div>
             </div>
             <div className="bg-black/30 rounded-lg p-4 text-center">
-              <div className="text-gray-400 text-xs mb-1">资金</div>
+              <div className="text-gray-400 text-xs mb-1">{t('funds_label')}</div>
               <div className="text-3xl font-bold text-yellow-400">${student?.money || 0}</div>
             </div>
             <div className="bg-black/30 rounded-lg p-4 text-center">
-              <div className="text-gray-400 text-xs mb-1">房产数</div>
+              <div className="text-gray-400 text-xs mb-1">{t('property_count')}</div>
               <div className="text-3xl font-bold text-purple-400">{student?.properties?.length || 0}</div>
             </div>
           </div>
           
           {/* Properties */}
           <div className="mt-4">
-            <div className="text-gray-400 text-sm mb-2">拥有的房产:</div>
+            <div className="text-gray-400 text-sm mb-2">{t('properties_owned')}</div>
             <div className="flex flex-wrap gap-2">
               {student?.properties?.length > 0 ? (
                 student.properties.map(propId => (
                   <span key={propId} className="px-3 py-1 bg-purple-600/30 rounded-lg text-purple-300 text-sm">
-                    格子{propId}
+                    {t('tile_label', '格子')}{propId}
                   </span>
                 ))
               ) : (
-                <span className="text-gray-500 text-sm">暂无房产</span>
+                <span className="text-gray-500 text-sm">{t('no_properties_owned')}</span>
               )}
             </div>
           </div>
@@ -527,7 +528,7 @@ function ObservePanel({ students, selectedStudent, onSelect }) {
   
   return (
     <div>
-      <h3 className="text-lg font-bold text-white mb-4">选择要观战的学生</h3>
+      <h3 className="text-lg font-bold text-white mb-4">{t('select_student_to_observe_title')}</h3>
       <div className="grid grid-cols-4 gap-4">
         {students.map(student => (
           <button
@@ -543,7 +544,7 @@ function ObservePanel({ students, selectedStudent, onSelect }) {
               <span className="text-white font-bold">{student.name}</span>
             </div>
             <div className="text-xs text-gray-400">
-              正确率: {student.questionsAnswered > 0 
+              {t('accuracy_label')} {student.questionsAnswered > 0 
                 ? Math.round((student.questionsCorrect / student.questionsAnswered) * 100) 
                 : 0}%
             </div>
@@ -554,7 +555,7 @@ function ObservePanel({ students, selectedStudent, onSelect }) {
       {students.length === 0 && (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">👁️</div>
-          <p className="text-purple-300">暂无学生可观察</p>
+          <p className="text-purple-300">{t('no_students_available')}</p>
         </div>
       )}
     </div>
@@ -566,12 +567,12 @@ function HomeworkPanel({ homeworkList, onNewAssignment }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-white">作业管理</h3>
+        <h3 className="text-lg font-bold text-white">{t('homework_management_title')}</h3>
         <button
           onClick={onNewAssignment}
           className="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-white text-sm font-bold"
         >
-          📝 布置新作业
+          {t('assign_new_homework_btn')}
         </button>
       </div>
       
@@ -586,8 +587,8 @@ function HomeworkPanel({ homeworkList, onNewAssignment }) {
                   <p className="text-gray-400 text-sm mt-1">{hw.content}</p>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs text-gray-400">截止日期</div>
-                  <div className="text-purple-300 text-sm">{hw.dueDate || '未设置'}</div>
+                  <div className="text-xs text-gray-400">{t('due_date_label')}</div>
+                  <div className="text-purple-300 text-sm">{hw.dueDate || t('not_set_label')}</div>
                 </div>
               </div>
             </div>
@@ -596,8 +597,8 @@ function HomeworkPanel({ homeworkList, onNewAssignment }) {
       ) : (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">📝</div>
-          <p className="text-purple-300">暂无已布置的作业</p>
-          <p className="text-gray-400 text-sm mt-2">点击上方按钮布置新作业</p>
+          <p className="text-purple-300">{t('no_homework_yet')}</p>
+          <p className="text-gray-400 text-sm mt-2">{t('click_above_hint')}</p>
         </div>
       )}
     </div>
@@ -648,15 +649,17 @@ function WrongBookPanel({ onExport }) {
     return grouped;
   }, [wrongAnswers]);
   
+  const categoryLabels = getCategoryLabels();
+  
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-white">错题本</h3>
+        <h3 className="text-lg font-bold text-white">{t('wrong_answer_book')}</h3>
         <button
           onClick={onExport}
           className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-white text-sm font-bold"
         >
-          📤 导出错题本
+          {t('export_wrong_answers_btn')}
         </button>
       </div>
       
@@ -670,7 +673,7 @@ function WrongBookPanel({ onExport }) {
               : 'bg-black/30 text-gray-400'
           }`}
         >
-          全部 ({wrongAnswers.length})
+          {t('all_filter')} ({wrongAnswers.length})
         </button>
         {Object.keys(groupedByCategory).map(cat => (
           <button
@@ -682,7 +685,7 @@ function WrongBookPanel({ onExport }) {
                 : 'bg-black/30 text-gray-400'
             }`}
           >
-            {CATEGORY_LABELS[cat] || cat} ({groupedByCategory[cat].length})
+            {categoryLabels[cat] || cat} ({groupedByCategory[cat].length})
           </button>
         ))}
       </div>
@@ -697,7 +700,7 @@ function WrongBookPanel({ onExport }) {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <span className="px-2 py-0.5 bg-red-900/50 rounded text-red-300 text-xs">
-                      {CATEGORY_LABELS[wa.category] || wa.category}
+                      {categoryLabels[wa.category] || wa.category}
                     </span>
                     <span className="text-gray-400 text-xs">{wa.studentName}</span>
                   </div>
@@ -710,8 +713,8 @@ function WrongBookPanel({ onExport }) {
       ) : (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">📕</div>
-          <p className="text-purple-300">暂无错题记录</p>
-          <p className="text-gray-400 text-sm mt-2">学生答题后错题会自动记录在此</p>
+          <p className="text-purple-300">{t('no_wrong_records')}</p>
+          <p className="text-gray-400 text-sm mt-2">{t('wrong_answers_auto_hint')}</p>
         </div>
       )}
     </div>
@@ -729,35 +732,35 @@ function AssignmentModal({
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
       <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-3xl p-6 w-[500px] border border-purple-500/30">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-white">布置作业</h3>
+          <h3 className="text-xl font-bold text-white">{t('create_homework_title')}</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl">✕</button>
         </div>
         
         <div className="space-y-4">
           <div>
-            <label className="text-gray-400 text-sm mb-1 block">作业标题 *</label>
+            <label className="text-gray-400 text-sm mb-1 block">{t('homework_title_field')}</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="例如: 第5单元练习"
+              placeholder={t('homework_title_eg')}
               className="w-full px-4 py-2 bg-black/30 border border-purple-500/50 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-400"
             />
           </div>
           
           <div>
-            <label className="text-gray-400 text-sm mb-1 block">作业内容</label>
+            <label className="text-gray-400 text-sm mb-1 block">{t('homework_content_field')}</label>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="输入作业要求和内容..."
+              placeholder={t('homework_content_eg')}
               rows={4}
               className="w-full px-4 py-2 bg-black/30 border border-purple-500/50 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-400 resize-none"
             />
           </div>
           
           <div>
-            <label className="text-gray-400 text-sm mb-1 block">截止日期</label>
+            <label className="text-gray-400 text-sm mb-1 block">{t('deadline_field')}</label>
             <input
               type="date"
               value={dueDate}
@@ -772,13 +775,13 @@ function AssignmentModal({
             onClick={onClose}
             className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-xl text-white font-bold"
           >
-            取消
+            {t('cancel_btn')}
           </button>
           <button
             onClick={onSend}
             className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-xl text-white font-bold"
           >
-            发送给全班
+            {t('send_to_all')}
           </button>
         </div>
       </div>
