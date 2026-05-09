@@ -3,6 +3,37 @@ import { useGameStore } from '../game/store';
 import { useMultiplayerStore } from '../multiplayer/multiplayerStore';
 import { AchievementPanel, useAchievementStore } from '../features/achievement';
 import { OnlineLobby } from '../multiplayer';
+import { LOCALES, getLocale, setLocale, getLocaleName } from '../i18n';
+
+function LanguageSelector() {
+  const [open, setOpen] = useState(false);
+  const current = getLocale();
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="px-8 py-4 bg-gradient-to-r from-gray-600 to-gray-700 rounded-xl text-xl font-bold shadow-lg hover:scale-105 transition-all w-full text-left flex items-center justify-between"
+      >
+        <span>🌐 {getLocaleName(current)}</span>
+        <span className="text-sm">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="absolute bottom-full mb-2 left-0 right-0 bg-gray-800 rounded-xl overflow-hidden shadow-xl z-50 border border-gray-600">
+          {Object.entries(LOCALES).map(([code, { nativeName }]) => (
+            <button
+              key={code}
+              onClick={() => { setLocale(code); setOpen(false); }}
+              className={`w-full px-4 py-3 text-left hover:bg-gray-700 transition-colors ${current === code ? 'bg-gray-700 text-yellow-400' : 'text-white'}`}
+            >
+              {nativeName}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function MenuScreen() {
   const goToProfile = useGameStore(s => s.goToProfile);
@@ -424,6 +455,8 @@ export default function MenuScreen() {
         >
           👤 玩家档案
         </button>
+
+        <LanguageSelector />
 
         <button
           onClick={useGameStore.getState().goToWorkshop}
