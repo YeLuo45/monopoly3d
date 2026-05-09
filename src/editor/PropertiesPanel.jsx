@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import useEditorStore from './editorStore';
 import { TILE_TYPES, COLOR_GROUPS, TILE_TYPE_INFO } from './editorTypes';
 import TilePalette from './TilePalette';
+import { t } from '../i18n';
 
 export default function PropertiesPanel() {
   const tiles = useEditorStore((s) => s.tiles);
@@ -16,8 +17,8 @@ export default function PropertiesPanel() {
   if (selectedTileIndex === null) {
     return (
       <div className="w-80 bg-gray-900/95 rounded-lg p-4 text-white h-full overflow-y-auto">
-        <h2 className="text-lg font-bold mb-4">属性面板</h2>
-        <p className="text-gray-400 text-sm mb-4">点击棋盘上的格子以编辑其属性</p>
+        <h2 className="text-lg font-bold mb-4">{t('properties_panel')}</h2>
+        <p className="text-gray-400 text-sm mb-4">{t('click_tile_to_edit')}</p>
         
         {/* Tile Type Palette - always visible */}
         <TilePalette />
@@ -34,7 +35,7 @@ export default function PropertiesPanel() {
             className="w-3 h-3 rounded-full"
             style={{ backgroundColor: selectedTile?.type ? TILE_TYPE_INFO[selectedTile.type]?.color : '#6B7280' }}
           />
-          格子 #{selectedTileIndex + 1}
+          {t('tile_number')}{selectedTileIndex + 1}
         </h2>
         <span className="text-xs text-gray-400">
           {TILE_TYPE_INFO[selectedTile?.type]?.icon} {TILE_TYPE_INFO[selectedTile?.type]?.label}
@@ -49,7 +50,7 @@ export default function PropertiesPanel() {
             activeTab === 'properties' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'
           }`}
         >
-          属性
+          {t('name')}
         </button>
         <button
           onClick={() => setActiveTab('palette')}
@@ -57,7 +58,7 @@ export default function PropertiesPanel() {
             activeTab === 'palette' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'
           }`}
         >
-          类型
+          {t('type')}
         </button>
       </div>
 
@@ -66,13 +67,13 @@ export default function PropertiesPanel() {
         <>
           {/* Name Field */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-300 mb-2">名称</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">{t('name')}</label>
             <input
               type="text"
               value={selectedTile.name || ''}
               onChange={(e) => updateTile(selectedTileIndex, { name: e.target.value })}
               className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm"
-              placeholder="输入格子名称..."
+              placeholder={t('enter_tile_name')}
             />
           </div>
 
@@ -82,7 +83,7 @@ export default function PropertiesPanel() {
               {/* Price */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  💵 价格
+                  💵 {t('price')}
                 </label>
                 <div className="flex items-center gap-2">
                   <span className="text-yellow-400 font-bold text-lg">$</span>
@@ -97,7 +98,7 @@ export default function PropertiesPanel() {
 
               {/* Color */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-300 mb-2">🎨 颜色</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">🎨 {t('color')}</label>
                 <div className="grid grid-cols-6 gap-2 mb-2">
                   {Object.entries(COLOR_GROUPS).map(([name, color]) => (
                     <button
@@ -130,13 +131,13 @@ export default function PropertiesPanel() {
 
               {/* Color Group */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-300 mb-2">📦 颜色组</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">📦 {t('color_group')}</label>
                 <select
                   value={selectedTile.group || ''}
                   onChange={(e) => updateTile(selectedTileIndex, { group: e.target.value || null })}
                   className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm"
                 >
-                  <option value="">无组</option>
+                  <option value="">{t('no_group')}</option>
                   {Object.keys(COLOR_GROUPS).map((group) => (
                     <option key={group} value={group}>{group}</option>
                   ))}
@@ -145,15 +146,15 @@ export default function PropertiesPanel() {
 
               {/* Rent */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-300 mb-2">🏠 租金</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">🏠 {t('rent')}</label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { key: 0, label: '基础' },
-                    { key: 1, label: '1房' },
-                    { key: 2, label: '2房' },
-                    { key: 3, label: '3房' },
-                    { key: 4, label: '4房' },
-                    { key: 5, label: '酒店' },
+                    { key: 0, label: t('rent_base') },
+                    { key: 1, label: t('rent_1house') },
+                    { key: 2, label: t('rent_2house') },
+                    { key: 3, label: t('rent_3house') },
+                    { key: 4, label: t('rent_4house') },
+                    { key: 5, label: t('rent_hotel') },
                   ].map(({ key, label }) => (
                     <div key={key} className="flex flex-col">
                       <span className="text-xs text-gray-500 mb-1">{label}</span>
@@ -177,7 +178,7 @@ export default function PropertiesPanel() {
           {/* Tax-specific fields */}
           {selectedTile.type === TILE_TYPES.TAX && (
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-300 mb-2">💰 税额</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">💰 {t('tax_amount')}</label>
               <div className="flex items-center gap-2">
                 <span className="text-yellow-400 font-bold text-lg">$</span>
                 <input
@@ -206,7 +207,7 @@ export default function PropertiesPanel() {
 
           {/* Tile Type Change */}
           <div className="mb-4 pt-3 border-t border-gray-700">
-            <label className="block text-sm font-medium text-gray-300 mb-2">🔄 更改类型</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">🔄 {t('change_type')}</label>
             <select
               value={selectedTile.type}
               onChange={(e) => setTileType(selectedTileIndex, e.target.value)}
@@ -223,7 +224,7 @@ export default function PropertiesPanel() {
             onClick={() => resetTile(selectedTileIndex)}
             className="w-full bg-red-600 hover:bg-red-700 text-white rounded px-4 py-2 text-sm font-medium transition-colors mt-2"
           >
-            🔄 重置此格子
+            🔄 {t('reset_tile')}
           </button>
         </>
       )}
