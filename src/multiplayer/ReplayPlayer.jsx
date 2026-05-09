@@ -10,10 +10,8 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { 
+import {
   ReplayPlayer as ReplayPlayerClass,
-  spectateGame,
-  fetchGameReplay,
   getLocalReplays,
   deleteLocalReplay,
   exportReplay,

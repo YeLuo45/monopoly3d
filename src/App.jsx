@@ -5,13 +5,16 @@ import { playBGM, stopBGM, toggleMute, getIsMuted, getBgmPlaying, initAudioOnInt
 import MenuScreen from './components/MenuScreen';
 import SetupScreen from './components/SetupScreen';
 import PieceSelectionScreen from './components/PieceSelectionScreen';
-import GameBoard from './components/GameBoard';
+import { lazy, Suspense } from 'react';
 import GameOverScreen from './components/GameOverScreen';
 import ProfileScreen from './components/ProfileScreen';
 import WorkshopScreen from './components/WorkshopScreen';
 import TeacherConsole from './components/TeacherConsole';
 import FloatingEffects from './components/FloatingEffects';
-import EditorPage from './editor/EditorPage';
+
+// Lazy-load 3D Canvas components to split three.js out of main bundle
+const GameBoard = lazy(() => import('./components/GameBoard'));
+const EditorPage = lazy(() => import('./editor/EditorPage'));
 import './index.css';
 
 // Achievement System
@@ -105,7 +108,7 @@ function App() {
       {screen === 'menu' && <MenuScreen />}
       {screen === 'setup' && <SetupScreen />}
       {screen === 'piece_selection' && <PieceSelectionScreen />}
-      {screen === 'editor' && <EditorPage />}
+      {screen === 'editor' && <Suspense fallback={<div className="w-full h-screen flex items-center justify-center text-white text-xl">加载编辑器...</div>}><EditorPage /></Suspense>}
       {screen === 'teacher_page' && <TeacherPage />}
       {screen === 'playing' && (
         <>
@@ -114,7 +117,7 @@ function App() {
           <TaskProgress />
           <Leaderboard />
           {isOnlineMultiplayer && <MultiplayerHUD />}
-          <GameBoard />
+          <Suspense fallback={<div className="w-full h-screen flex items-center justify-center text-white text-xl">加载3D棋盘...</div>}><GameBoard /></Suspense>
           <FloatingEffects />
           <TeacherConsole />
           <StudentHomeworkPanel />

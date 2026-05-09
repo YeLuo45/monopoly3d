@@ -5,15 +5,16 @@
  * Handles both local and online multiplayer games.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { useGameStore } from '../game/store';
 import { useMultiplayerStore } from './multiplayerStore';
-import GameBoard from '../components/GameBoard';
 import GameControls from '../components/GameControls';
 import HUD from '../components/HUD';
 import MultiplayerHUD from './MultiplayerHUD';
 import FloatingEffects from '../components/FloatingEffects';
 import AudioControls from '../App'; // Import AudioControls from App
+
+const GameBoard = lazy(() => import('../components/GameBoard'));
 
 export default function GamePage({ isOnline = false }) {
   const [isMyTurn, setIsMyTurn] = useState(false);
@@ -146,7 +147,9 @@ export default function GamePage({ isOnline = false }) {
       )}
       
       {/* Main Game Board */}
-      <GameBoard />
+      <Suspense fallback={<div className="w-full h-screen flex items-center justify-center text-white text-xl">加载3D棋盘...</div>}>
+        <GameBoard />
+      </Suspense>
       
       {/* Game Controls */}
       <GameControls isOnline={isOnline} isMyTurn={isMyTurn} />
