@@ -3,21 +3,26 @@ import { useAchievementStore } from './achievementStore';
 import { ACHIEVEMENTS, getTotalPossiblePoints } from './achievementData';
 import { ACHIEVEMENT_CATEGORIES, ACHIEVEMENT_DIFFICULTY, TASK_CHAPTERS } from './achievementTypes';
 import { useGameStore } from '../../game/store';
+import { t } from '../../i18n';
 
-const CATEGORY_NAMES = {
-  [ACHIEVEMENT_CATEGORIES.GAMEPLAY]: '🎮 游戏成就',
-  [ACHIEVEMENT_CATEGORIES.LEARNING]: '📚 学习成就',
-  [ACHIEVEMENT_CATEGORIES.SOCIAL]: '🤝 社交成就',
-  [ACHIEVEMENT_CATEGORIES.SPECIAL]: '⭐ 特殊成就',
-  [ACHIEVEMENT_CATEGORIES.SEASONAL]: '🎉 限时成就',
-};
+function getCategoryNames() {
+  return {
+    [ACHIEVEMENT_CATEGORIES.GAMEPLAY]: t('achievement_category_gameplay'),
+    [ACHIEVEMENT_CATEGORIES.LEARNING]: t('achievement_category_learning'),
+    [ACHIEVEMENT_CATEGORIES.SOCIAL]: t('achievement_category_social'),
+    [ACHIEVEMENT_CATEGORIES.SPECIAL]: t('achievement_category_special'),
+    [ACHIEVEMENT_CATEGORIES.SEASONAL]: t('achievement_category_seasonal'),
+  };
+}
 
-const DIFFICULTY_INFO = {
-  [ACHIEVEMENT_DIFFICULTY.EASY]: { label: '简单', color: 'text-green-400', stars: 1 },
-  [ACHIEVEMENT_DIFFICULTY.MEDIUM]: { label: '中等', color: 'text-blue-400', stars: 2 },
-  [ACHIEVEMENT_DIFFICULTY.HARD]: { label: '困难', color: 'text-purple-400', stars: 3 },
-  [ACHIEVEMENT_DIFFICULTY.LEGENDARY]: { label: '传说', color: 'text-yellow-400', stars: 4 },
-};
+function getDifficultyInfo() {
+  return {
+    [ACHIEVEMENT_DIFFICULTY.EASY]: { label: t('difficulty_easy'), color: 'text-green-400', stars: 1 },
+    [ACHIEVEMENT_DIFFICULTY.MEDIUM]: { label: t('difficulty_medium'), color: 'text-blue-400', stars: 2 },
+    [ACHIEVEMENT_DIFFICULTY.HARD]: { label: t('difficulty_hard'), color: 'text-purple-400', stars: 3 },
+    [ACHIEVEMENT_DIFFICULTY.LEGENDARY]: { label: t('difficulty_legendary'), color: 'text-yellow-400', stars: 4 },
+  };
+}
 
 export default function AchievementPanel() {
   const [isOpen, setIsOpen] = useState(false);
@@ -162,7 +167,7 @@ export default function AchievementPanel() {
                       className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm"
                     >
                       <option value="all">全部分类</option>
-                      {Object.entries(CATEGORY_NAMES).map(([key, name]) => (
+                      {Object.entries(getCategoryNames()).map(([key, name]) => (
                         <option key={key} value={key}>{name}</option>
                       ))}
                     </select>
@@ -181,7 +186,7 @@ export default function AchievementPanel() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {achievements.map(achievement => {
                       const isUnlocked = !!unlockedAchievements[achievement.id];
-                      const difficulty = DIFFICULTY_INFO[achievement.difficulty];
+                      const difficulty = getDifficultyInfo()[achievement.difficulty];
 
                       return (
                         <div

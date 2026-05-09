@@ -71,8 +71,6 @@ export default {
   player_count: 'Players',
   select_theme: 'Select Theme',
   start_game_btn: 'Start Game',
-
-  // Setup - Age Tiers
   age_tier_kindergarten: 'Kindergarten (4-6 years)',
   age_tier_kindergarten_desc: 'Simple Q&A with voice reading',
   age_tier_primary1_2: 'Primary 1-2 (6-8 years)',
@@ -124,6 +122,7 @@ export default {
   difficulty_hard: 'Hard',
   difficulty_expert: 'Expert',
   difficulty_hell: 'Hell',
+  difficulty_legendary: 'Legendary',
   average_rating: 'Avg Rating',
   map_count: 'Maps',
   sort_by_difficulty: 'Sort by Difficulty',
@@ -166,7 +165,6 @@ export default {
   publish_success: 'Published successfully!',
   publish_failed: 'Publish failed:',
   publish_not_ready: 'Publishing not implemented yet',
-  loading: 'Loading...',
   retry: 'Retry',
   ensure_workshop_sql: 'Make sure to run workshop.sql in Supabase',
   no_content_found: 'No content found',
@@ -180,12 +178,6 @@ export default {
   suggested_easy: 'Easy',
   suggested_normal: 'Normal',
 
-  // Rating
-  rate_map: 'Rate Map',
-  select_difficulty: 'Select Difficulty',
-  submit_rating: 'Submit',
-  cancel: 'Cancel',
-
   // Editor
   tile_palette: 'Tile Palette',
   property_editor: 'Property Editor',
@@ -194,35 +186,6 @@ export default {
   test_play: 'Test Play',
   rent_level: 'Rent Level',
   house_count: 'Houses',
-
-  // Achievements
-  achievement_unlocked: 'Achievement Unlocked!',
-  task_progress: 'Task Progress',
-  daily_challenge: 'Daily Challenge',
-  leaderboard: 'Leaderboard',
-
-  // AI
-  ai_assistant: 'AI Tutor',
-  practice_mode: 'Practice Mode',
-  learning_report: 'Learning Report',
-
-  // Multiplayer
-  online_lobby: 'Online Lobby',
-  create_room_btn: 'Create Room',
-  join_room_btn: 'Join Room',
-  room_code: 'Room Code',
-  spectate: 'Spectate',
-
-  // Replay
-  replay: 'Replay',
-  live_spectate: 'Live Spectate',
-  no_replay_data: 'No Replay Data',
-
-  // Loading
-  loading_board: 'Loading 3D Board...',
-  loading_editor: 'Loading Editor...',
-
-  // Editor Toolbar
   board: 'Board',
   templates: 'Templates',
   select_template: 'Select Template...',
@@ -282,25 +245,35 @@ export default {
   click_tile_first: 'Click a tile on the board first, then select type',
   current_map_type_distribution: 'Current Map Type Distribution',
 
-  // Achievement Panel
+  // Achievement categories
+  achievement_category_gameplay: '🎮 Game',
+  achievement_category_learning: '📚 Learning',
+  achievement_category_social: '🤝 Social',
+  achievement_category_special: '⭐ Special',
+  achievement_category_seasonal: '🎉 Seasonal',
+
+  // Achievements
+  achievement_unlocked: 'Achievement Unlocked!',
+  task_progress: 'Task Progress',
+  daily_challenge: 'Daily Challenge',
+  leaderboard: 'Leaderboard',
   achievement_center: 'Achievement Center',
   student: 'Student',
   completion_progress: 'Completion Progress',
   current_points: 'Current Points',
   max_points: 'Max Points',
-  achievements: 'Achievements',
-  tasks: 'Tasks',
-  stats: 'Stats',
+  achievements_tab: 'Achievements',
+  tasks_tab: 'Tasks',
+  stats_tab: 'Stats',
   all_categories: 'All Categories',
   default_sort: 'Default Sort',
   sort_by_points: 'Sort by Points',
-  sort_by_difficulty: 'Sort by Difficulty',
   locked: 'Locked',
   tasks_completed: 'Tasks Completed',
   games_played_stat: 'Games Played',
   wins: 'Wins',
   questions_answered: 'Questions Answered',
-  accuracy: 'Accuracy',
+  accuracy_stat: 'Accuracy',
   properties_bought_stat: 'Properties Bought',
   houses_built: 'Houses Built',
   max_coins: 'Max Coins',
@@ -310,17 +283,13 @@ export default {
   social_achievements: 'Social Achievements',
   special_achievements: 'Special Achievements',
   seasonal_achievements: 'Seasonal Achievements',
-  difficulty_easy: 'Easy',
-  difficulty_medium: 'Medium',
-  difficulty_hard: 'Hard',
-  difficulty_legendary: 'Legendary',
 
   // Daily Challenge
   daily_challenge_title: 'Daily Challenge',
   daily_challenge_desc: 'Resets daily, double rewards!',
   today_progress: "Today's Progress",
   next_reset: 'Next Reset',
-  points: 'Points',
+  points_label: 'Points',
   completed: 'Completed',
   loading_daily_challenge: 'Loading daily challenges...',
   claimable_rewards: 'Claimable Rewards',
@@ -349,6 +318,27 @@ export default {
   total_points_abbr: 'Total Points',
   update_my_score: 'Update My Score',
   update_score_hint: 'You can update your leaderboard score after each game',
+
+  // AI
+  ai_assistant: 'AI Tutor',
+  practice_mode: 'Practice Mode',
+  learning_report: 'Learning Report',
+
+  // Multiplayer
+  online_lobby: 'Online Lobby',
+  create_room_btn: 'Create Room',
+  join_room_btn: 'Join Room',
+  room_code: 'Room Code',
+  spectate: 'Spectate',
+
+  // Replay
+  replay: 'Replay',
+  live_spectate: 'Live Spectate',
+  no_replay_data: 'No Replay Data',
+
+  // Loading
+  loading_board: 'Loading 3D Board...',
+  loading_editor: 'Loading Editor...',
 
   // Profile & GameOver
   profile: 'Profile',
