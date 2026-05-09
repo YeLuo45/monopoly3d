@@ -1,62 +1,63 @@
 import { useState } from 'react';
 import { useGameStore } from '../game/store';
+import { t } from '../i18n';
 
 const PIECES = [
   {
     id: 0,
-    name: '小汽车',
+    nameKey: 'piece_car',
+    descKey: 'piece_car_desc',
     emoji: '🚗',
     color: '#FF6B6B',
     shape: 'car',
-    desc: '速度感十足',
   },
   {
     id: 1,
-    name: '小狗狗',
+    nameKey: 'piece_dog',
+    descKey: 'piece_dog_desc',
     emoji: '🐶',
     color: '#4ECDC4',
     shape: 'dog',
-    desc: '忠诚可爱',
   },
   {
     id: 2,
-    name: '小猫咪',
+    nameKey: 'piece_cat',
+    descKey: 'piece_cat_desc',
     emoji: '🐱',
     color: '#45B7D1',
     shape: 'cat',
-    desc: '灵活敏捷',
   },
   {
     id: 3,
-    name: '陀螺',
+    nameKey: 'piece_top',
+    descKey: 'piece_top_desc',
     emoji: '🎯',
     color: '#96CEB4',
     shape: 'top',
-    desc: '炫酷旋转',
   },
   {
     id: 4,
-    name: '奥特曼',
+    nameKey: 'piece_ultraman',
+    descKey: 'piece_ultraman_desc',
     emoji: '🦸',
     color: '#C0C0C0',
     shape: 'ultraman',
-    desc: '光之巨人',
   },
   {
     id: 5,
-    name: '皮卡丘',
+    nameKey: 'piece_pikachu',
+    descKey: 'piece_pikachu_desc',
     emoji: '⚡',
     color: '#FFE135',
     shape: 'pikachu',
-    desc: '电耗子',
   },
   {
     id: 6,
-    name: '哆啦A梦',
+    nameKey: 'piece_doraemon',
+    descKey: 'piece_doraemon_desc',
     emoji: '🤖',
     color: '#00A5E0',
     shape: 'doraemon',
-    desc: '机器猫',
   },
 ];
 
@@ -84,7 +85,7 @@ export default function PieceSelectionScreen() {
 
   const handleLockIn = () => {
     if (selections[0] === undefined) {
-      alert('请先选择你的棋子！');
+      alert(t('please_select_first'));
       return;
     }
     setHumanPieceLocked(true);
@@ -114,9 +115,9 @@ export default function PieceSelectionScreen() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen text-white p-6">
-      <h2 className="text-4xl font-bold mb-2 text-yellow-300">🎮 选择你的棋子</h2>
+      <h2 className="text-4xl font-bold mb-2 text-yellow-300">🎮 {t('select_your_piece')}</h2>
       <p className="text-purple-200 mb-8 text-center">
-        共 {totalPlayers} 名玩家（{humanCount} 人类 + {aiCount} AI）
+        {t('total_players_info', { humanCount, aiCount, total: totalPlayers })}
       </p>
 
       {/* Piece grid */}
@@ -153,17 +154,17 @@ export default function PieceSelectionScreen() {
                 {piece.emoji}
               </div>
 
-              <div className="font-bold text-lg">{piece.name}</div>
-              <div className="text-sm text-gray-400">{piece.desc}</div>
+              <div className="font-bold text-lg">{t(piece.nameKey)}</div>
+              <div className="text-sm text-gray-400">{t(piece.descKey)}</div>
 
               {isHumanSelected && (
                 <div className="absolute -top-2 -right-2 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-full">
-                  👤 你
+                  👤 {t('you_label')}
                 </div>
               )}
               {isAiSelected && !isHumanSelected && (
                 <div className="absolute -top-2 -right-2 bg-gray-600 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  🤖 AI
+                  🤖 {t('piece_already_selected')}
                 </div>
               )}
             </button>
@@ -175,11 +176,11 @@ export default function PieceSelectionScreen() {
       <div className="mb-8 text-center">
         {selections[0] !== undefined ? (
           <p className="text-green-400 text-lg">
-            ✅ 已选择：{PIECES.find(p => p.id === selections[0])?.emoji}{' '}
-            {humanPieceLocked ? '— 等待其他玩家...' : '— 点击下方确认'}
+            ✅ {t('piece_selected')}：{PIECES.find(p => p.id === selections[0])?.emoji}{' '}
+            {humanPieceLocked ? t('waiting_for_others') : t('click_to_confirm')}
           </p>
         ) : (
-          <p className="text-yellow-300 text-lg">👆 请点击选择你的棋子</p>
+          <p className="text-yellow-300 text-lg">👆 {t('please_select_piece')}</p>
         )}
       </div>
 
@@ -197,12 +198,12 @@ export default function PieceSelectionScreen() {
               }
             `}
           >
-            {selections[0] !== undefined ? '🚀 确认并开始游戏' : '选择棋子后开始'}
+            {selections[0] !== undefined ? t('confirm_and_start') : t('select_piece_to_start')}
           </button>
         )}
         {humanPieceLocked && (
           <div className="flex items-center gap-3 text-xl text-purple-200">
-            <span className="animate-pulse">🎲 正在准备游戏...</span>
+            <span className="animate-pulse">🎲 {t('preparing_game')}</span>
           </div>
         )}
       </div>

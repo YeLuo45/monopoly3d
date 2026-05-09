@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useGameStore } from '../../game/store';
 import { BOARD_CONFIG } from '../../game/boardConfig';
+import { t } from '../../i18n';
 
 // Category labels
 const CATEGORY_LABELS = {
@@ -18,64 +19,64 @@ const CATEGORY_LABELS = {
 // AI Assistant personality modes
 const AI_MODES = {
   TUTOR: {
-    name: '学习导师',
+    nameKey: 'learning_tutor_mode',
     icon: '🎓',
     color: '#A78BFA',
-    description: '详细讲解知识点，帮助理解',
+    descKey: 'tutor_explain',
   },
   HELPER: {
-    name: '游戏助手',
+    nameKey: 'game_helper_mode',
     icon: '🎮',
     color: '#4ECDC4',
-    description: '提供游戏策略和技巧',
+    descKey: 'helper_provide_tips',
   },
   FRIEND: {
-    name: '小伙伴',
+    nameKey: 'buddy_mode',
     icon: '🤗',
     color: '#FF6B6B',
-    description: '轻松聊天，鼓励互动',
+    descKey: 'buddy_chat',
   },
 };
 
 // Suggested questions based on context
 const SUGGESTED_QUESTIONS = {
   property: [
-    '这个地块值多少钱？',
-    '要不要买这块地？',
-    '租金是怎么计算的？',
+    'property_worth',
+    'should_buy_land',
+    'rent_calculation',
   ],
   question: [
-    '这道题怎么做？',
-    '有没有解题技巧？',
-    '正确答案是什么？',
+    'how_to_solve_problem',
+    'any_tips_label',
+    'correct_answer_label',
   ],
   general: [
-    '今天的游戏我表现怎么样？',
-    '我应该先做什么？',
-    '怎么才能赢？',
+    'hows_my_performance',
+    'what_first',
+    'how_to_win_game',
   ],
 };
 
 // AI response templates
 const AI_RESPONSES = {
   property: {
-    buy: (tile) => `这块「${tile?.name || '地块'}」位置不错！\n\n价格：$${tile?.price || 0}\n租金：$${tile?.rent || 0}\n\n💡 建议：如果你的资金充足，买下来可以增加收入来源！但要注意别花光所有钱哦~`,
-    dont_buy: (tile) => `这块「${tile?.name || '地块'}」目前可能不是最佳选择。\n\n原因：\n• 资金可能需要留作他用\n• 这个位置的人流量不是很高\n\n💡 建议：先把钱攒着，等待更好的机会！`,
-    build: (tile) => `在这块地上建房子是个不错的选择！\n\n「${tile?.name || '地块'}」\n当前房价：$${tile?.price || 0}\n建造费用：$50/栋\n\n💡 建议：当你拥有同一颜色的所有地块时，建房可以大幅提高租金收入！`,
+    buy: (tile) => `${t('this_is_category_question')} ${tile?.name || t('unknown')}${t('question_concern')}\n\n${t('price')}: $${tile?.price || 0}\n${t('rent')}: $${tile?.rent || 0}\n\n💡 ${t('suggestions_improvement')}: ${t('try_buy_property_label')}!`,
+    dont_buy: (tile) => `${tile?.name || t('unknown')} ${t('question_concern')}\n\n💡 ${t('suggestions_improvement')}: ${t('save_money_buy_land')}`,
+    build: (tile) => `${t('this_is_category_question')} ${tile?.name || t('unknown')}${t('question_concern')}\n\n${t('rent')}: $${tile?.rent || 0}\n\n💡 ${t('suggestions_improvement')}: ${t('try_buy_property_label')}!`,
   },
   question: {
-    hint: (category) => `这是一道${CATEGORY_LABELS[category] || '综合'}题目~ \n\n💡 小提示：\n• 仔细阅读题目要求\n• 注意题目中的关键词\n• 可以用排除法先去掉明显错误的选项\n\n加油！你行的！🌟`,
-    encourage: `别紧张，你已经很努力了！\n\n无论结果如何，这都是一个学习的好机会。\n答对了开心，答错了也没关系，都是成长的一部分~ 💪`,
+    hint: (category) => `${t('this_is_category_question')} ${CATEGORY_LABELS[category] || t('category_comprehensive')}${t('question_concern')} \n\n💡 ${t('any_tips_label')}:\n• ${t('try_ask_me')}\n\n💪 ${t('dont_worry_encourage')}`,
+    encourage: `${t('dont_worry_encourage')}\n\n💪 ${t('加油_keep_learning')}`,
   },
   progress: (stats) => {
     const accuracy = stats.totalQuestions > 0 
       ? Math.round((stats.correctQuestions / stats.totalQuestions) * 100) 
       : 0;
-    return `让我看看你的表现...\n\n📊 今日战绩：\n• 正确率：${accuracy}%\n• 答题数：${stats.totalQuestions}\n• 答对：${stats.correctQuestions}题\n• 房产：${stats.propertiesBought}处\n\n${accuracy >= 80 ? '🌟 太棒了！继续保持！' : accuracy >= 60 ? '💪 不错的表现，再接再厉！' : '📚 继续加油，你一定能进步！'}`;
+    return `${t('let_me_check_performance')}\n\n${t('today_stats')}\n• ${t('accuracy')}: ${accuracy}%\n• ${t('questions_answered_label')}: ${stats.totalQuestions}\n• ${t('correct_answers_label')}: ${stats.correctQuestions}\n• ${t('property_count')}: ${stats.propertiesBought}\n\n${accuracy >= 80 ? t('great_keepgoing') : accuracy >= 60 ? t('good_job_continue') : t('加油_keep_learning')}`;
   },
   general: {
-    greeting: `你好呀！我是你的AI学习助手 🎓\n\n我可以帮你：\n• 解答游戏中的疑问\n• 提供学习方面的帮助\n• 给予鼓励和支持\n\n有什么想问的吗？`,
-    strategy: `大富翁致胜攻略 📈\n\n1️⃣ 前期：多买地，少花钱\n2️⃣ 中期：建造房屋，提高收入\n3️⃣ 后期：巩固优势，等待对手犯错\n\n还有问题吗？随时问我哦！`,
+    greeting: `${t('hello_ai_helper')}\n\n${t('as_tutor_can_help')}\n\n${t('try_ask_me')}`,
+    strategy: `${t('monopoly_strategy')}\n\n1️⃣ ${t('weakspots_tab')}: ${t('try_buy_property_label')}\n2️⃣ ${t('strengthen_practice_label')}: ${t('save_money_buy_land')}\n3️⃣ ${t('control_game_time_label')}: ${t('short_game_tips')}`,
   },
 };
 
@@ -262,18 +263,18 @@ export default function AIAssistant() {
       {
         id: `system-${Date.now()}`,
         type: 'system',
-        content: `切换到${modeInfo.icon} ${modeInfo.name}模式：${modeInfo.description}`,
+        content: `${t('switch_to_mode')}${t(modeInfo.nameKey)} ${t('mode_description')}${t(modeInfo.descKey)}`,
         timestamp: Date.now(),
       },
     ]);
   }, []);
-  
+
   if (!isOpen) {
     return (
       <button
         onClick={() => setIsOpen(true)}
         className="fixed bottom-24 right-4 z-40 w-14 h-14 bg-gradient-to-br from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
-        title="AI学习助手"
+        title={t('ai_learning_assistant')}
       >
         <span className="text-2xl">🤖</span>
         {/* Notification dot for new messages */}
@@ -291,8 +292,8 @@ export default function AIAssistant() {
         <div className="flex items-center gap-2">
           <span className="text-xl">🤖</span>
           <div>
-            <div className="text-white font-bold text-sm">AI学习助手</div>
-            <div className="text-purple-200 text-xs">{AI_MODES[aiMode].name}</div>
+            <div className="text-white font-bold text-sm">{t('ai_learning_assistant')}</div>
+            <div className="text-purple-200 text-xs">{t(AI_MODES[aiMode].nameKey)}</div>
           </div>
         </div>
         <button
@@ -318,7 +319,7 @@ export default function AIAssistant() {
               backgroundColor: aiMode === key ? mode.color + '40' : 'transparent',
             }}
           >
-            {mode.icon} {mode.name}
+            {mode.icon} {t(mode.nameKey)}
           </button>
         ))}
       </div>
@@ -369,7 +370,7 @@ export default function AIAssistant() {
       {/* Suggestions */}
       {messages.length <= 2 && !isTyping && (
         <div className="px-3 pb-2">
-          <div className="text-xs text-gray-500 mb-2">快捷问题：</div>
+          <div className="text-xs text-gray-500 mb-2">{t('quick_questions')}</div>
           <div className="flex flex-wrap gap-1">
             {getContextualSuggestions().map((suggestion, idx) => (
               <button
@@ -377,7 +378,7 @@ export default function AIAssistant() {
                 onClick={() => handleSuggestionClick(suggestion)}
                 className="px-2 py-1 bg-purple-600/30 hover:bg-purple-600/50 rounded-lg text-xs text-purple-200 transition-colors"
               >
-                {suggestion}
+                {t(suggestion)}
               </button>
             ))}
           </div>
@@ -393,7 +394,7 @@ export default function AIAssistant() {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="输入你的问题..."
+            placeholder={t('type_your_question')}
             className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 focus:bg-slate-600 rounded-xl text-white placeholder-gray-400 text-sm outline-none transition-colors"
           />
           <button

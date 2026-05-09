@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useGameStore } from '../../game/store';
 import { BOARD_CONFIG } from '../../game/boardConfig';
+import { t } from '../../i18n';
 
 // Category labels and colors
 const CATEGORY_LABELS = {
@@ -251,18 +252,18 @@ export default function LearningReport() {
   // Generate weak spot suggestion
   function generateWeakSpotSuggestion(category) {
     const suggestions = {
-      math: '多做基础计算练习，熟练掌握加减乘除',
-      shape: '多观察生活中的几何图形，建立空间感',
-      time: '多看时钟练习，熟练认读整点和半点',
-      geography: '多看地图和中国地理，认识各省位置',
-      science: '多观察自然现象，理解基本科学原理',
-      reading: '多朗读课文，练习理解文章内容',
-      life: '多参与日常生活，培养生活技能',
-      emotion: '多表达自己的感受，学会情绪管理',
-      animal: '多观察动物特征，了解动物习性',
+      math: t('math_practice_advice') || '多做基础计算练习，熟练掌握加减乘除',
+      shape: t('shape_practice_advice') || '多观察生活中的几何图形，建立空间感',
+      time: t('time_practice_advice') || '多看时钟练习，熟练认读整点和半点',
+      geography: t('geography_practice_advice') || '多看地图和中国地理，认识各省位置',
+      science: t('science_practice_advice') || '多观察自然现象，理解基本科学原理',
+      reading: t('reading_practice_advice') || '多朗读课文，练习理解文章内容',
+      life: t('life_practice_advice') || '多参与日常生活，培养生活技能',
+      emotion: t('emotion_practice_advice') || '多表达自己的感受，学会情绪管理',
+      animal: t('animal_practice_advice') || '多观察动物特征，了解动物习性',
     };
     
-    return suggestions[category] || '多做相关练习题';
+    return suggestions[category] || t('general_practice_advice') || '多做相关练习题';
   }
   
   // Generate improvement suggestions
@@ -350,7 +351,7 @@ export default function LearningReport() {
       <button
         onClick={() => setIsOpen(true)}
         className="fixed bottom-48 right-4 z-40 w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
-        title="学习报告"
+        title={t('learning_report')}
       >
         <span className="text-2xl">📊</span>
       </button>
@@ -364,9 +365,9 @@ export default function LearningReport() {
         <div className="flex items-center gap-2">
           <span className="text-2xl">📊</span>
           <div>
-            <div className="text-white font-bold">学习报告</div>
+            <div className="text-white font-bold">{t('learning_report_title')}</div>
             <div className="text-blue-200 text-xs">
-              {studentId || '匿名'} · {GRADE_LABELS[ageTier] || ageTier}
+              {studentId || t('anonymous_label')} · {GRADE_LABELS[ageTier] || ageTier}
             </div>
           </div>
         </div>
@@ -381,9 +382,9 @@ export default function LearningReport() {
       {/* Tabs */}
       <div className="flex border-b border-slate-700 bg-black/20">
         {[
-          { key: 'overview', label: '总览', icon: '📈' },
-          { key: 'weakspots', label: '薄弱项', icon: '🎯' },
-          { key: 'history', label: '历史', icon: '📜' },
+          { key: 'overview', labelKey: 'overview_tab', icon: '📈' },
+          { key: 'weakspots', labelKey: 'weakspots_tab', icon: '🎯' },
+          { key: 'history', labelKey: 'history_tab', icon: '📜' },
         ].map(tab => (
           <button
             key={tab.key}
@@ -395,7 +396,7 @@ export default function LearningReport() {
             }`}
           >
             <span>{tab.icon}</span>
-            <span>{tab.label}</span>
+            <span>{t(tab.labelKey)}</span>
           </button>
         ))}
       </div>
@@ -407,38 +408,38 @@ export default function LearningReport() {
           <div className="p-4 space-y-4">
             {/* Main stats card */}
             <div className="bg-gradient-to-br from-blue-900/50 to-indigo-900/50 rounded-xl p-4 border border-blue-500/30">
-              <div className="text-xs text-blue-300 mb-3">本局表现</div>
+              <div className="text-xs text-blue-300 mb-3">{t('this_game_performance')}</div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center">
                   <div className="text-3xl font-bold" style={{ color: getAccuracyColor(currentStats.accuracy) }}>
                     {currentStats.accuracy}%
                   </div>
-                  <div className="text-xs text-gray-400">正确率</div>
+                  <div className="text-xs text-gray-400">{t('accuracy_rate_label')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-3xl font-bold text-blue-400">
                     {currentStats.totalQuestions}
                   </div>
-                  <div className="text-xs text-gray-400">答题数</div>
+                  <div className="text-xs text-gray-400">{t('questions_answered_label')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-400">
                     {currentStats.correctQuestions}
                   </div>
-                  <div className="text-xs text-gray-400">答对</div>
+                  <div className="text-xs text-gray-400">{t('correct_answers_label')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-yellow-400">
                     #{currentStats.playerRank}
                   </div>
-                  <div className="text-xs text-gray-400">排名</div>
+                  <div className="text-xs text-gray-400">{t('rank_label')}</div>
                 </div>
               </div>
             </div>
             
             {/* Category performance */}
             <div>
-              <div className="text-sm text-gray-400 mb-2">📈 分类正确率</div>
+              <div className="text-sm text-gray-400 mb-2">{t('category_accuracy_chart')}</div>
               <div className="space-y-2">
                 {enabledCategories.map(cat => {
                   const catStats = currentStats.categoryStats[cat] || { total: 0, accuracy: 0 };
@@ -469,7 +470,7 @@ export default function LearningReport() {
               <div className="grid grid-cols-2 gap-2">
                 {currentStats.weakestCategory && (
                   <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-2">
-                    <div className="text-xs text-red-400">⚠️ 需加强</div>
+                    <div className="text-xs text-red-400">{t('weak_category_alert')}</div>
                     <div className="text-sm font-bold text-white">
                       {CATEGORY_LABELS[currentStats.weakestCategory]}
                     </div>
@@ -480,7 +481,7 @@ export default function LearningReport() {
                 )}
                 {currentStats.strongestCategory && (
                   <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-2">
-                    <div className="text-xs text-green-400">💪 最强项</div>
+                    <div className="text-xs text-green-400">{t('strongest_category_label')}</div>
                     <div className="text-sm font-bold text-white">
                       {CATEGORY_LABELS[currentStats.strongestCategory]}
                     </div>
@@ -495,7 +496,7 @@ export default function LearningReport() {
             {/* Suggestions */}
             {suggestions.length > 0 && (
               <div>
-                <div className="text-sm text-gray-400 mb-2">💡 改进建议</div>
+                <div className="text-sm text-gray-400 mb-2">{t('suggestions_improvement')}</div>
                 <div className="space-y-2">
                   {suggestions.map((tip, idx) => (
                     <div 
@@ -525,13 +526,13 @@ export default function LearningReport() {
             {weakSpots.length === 0 ? (
               <div className="text-center py-8">
                 <div className="text-4xl mb-3">🌟</div>
-                <div className="text-white font-bold">太棒了！</div>
-                <div className="text-gray-400 text-sm mt-1">暂无薄弱项，各科表现均衡</div>
+                <div className="text-white font-bold">{t('great_job_label')}</div>
+                <div className="text-gray-400 text-sm mt-1">{t('no_weakspots_balanced')}</div>
               </div>
             ) : (
               <>
                 <div className="text-sm text-gray-400 mb-2">
-                  共 {weakSpots.length} 个薄弱项需要加强
+                  {weakSpots.length} {t('weakspots_need_work')}
                 </div>
                 {weakSpots.map((spot, idx) => (
                   <div 
@@ -551,7 +552,7 @@ export default function LearningReport() {
                         </span>
                       </div>
                       <span className="text-xs text-gray-400">
-                        {spot.total}题
+                        {spot.total}{t('questions_suffix')}
                       </span>
                     </div>
                     <div className="text-sm text-gray-300">{spot.suggestion}</div>
@@ -568,9 +569,9 @@ export default function LearningReport() {
             {/* Date range filter */}
             <div className="flex gap-2">
               {[
-                { key: 'week', label: '本周' },
-                { key: 'month', label: '本月' },
-                { key: 'all', label: '全部' },
+                { key: 'week', labelKey: 'this_week_label' },
+                { key: 'month', labelKey: 'this_month_label' },
+                { key: 'all', labelKey: 'all_time_label' },
               ].map(range => (
                 <button
                   key={range.key}
@@ -581,7 +582,7 @@ export default function LearningReport() {
                       : 'bg-slate-700 text-gray-400 hover:text-white'
                   }`}
                 >
-                  {range.label}
+                  {t(range.labelKey)}
                 </button>
               ))}
             </div>
@@ -591,29 +592,29 @@ export default function LearningReport() {
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <div className="text-2xl font-bold text-blue-400">{historicalStats.totalGames}</div>
-                  <div className="text-xs text-gray-400">游戏场次</div>
+                  <div className="text-xs text-gray-400">{t('games_played_label')}</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold" style={{ color: getAccuracyColor(historicalStats.avgAccuracy) }}>
                     {historicalStats.avgAccuracy}%
                   </div>
-                  <div className="text-xs text-gray-400">历史平均</div>
+                  <div className="text-xs text-gray-400">{t('historical_average_label')}</div>
                 </div>
                 <div>
                   <div className={`text-2xl font-bold ${historicalStats.improvement >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                     {historicalStats.improvement >= 0 ? '+' : ''}{historicalStats.improvement}%
                   </div>
-                  <div className="text-xs text-gray-400">进步幅度</div>
+                  <div className="text-xs text-gray-400">{t('improvement_rate_label')}</div>
                 </div>
               </div>
             </div>
             
             {/* Recent games list */}
             <div>
-              <div className="text-sm text-gray-400 mb-2">📜 近期战绩</div>
+              <div className="text-sm text-gray-400 mb-2">{t('recent_performance_label')}</div>
               {historicalData.length === 0 ? (
                 <div className="text-center py-6 text-gray-400 text-sm">
-                  暂无历史记录
+                  {t('no_history_records')}
                 </div>
               ) : (
                 <div className="space-y-2 max-h-60 overflow-y-auto">
@@ -631,7 +632,7 @@ export default function LearningReport() {
                             {formatDate(game.timestamp)}
                           </div>
                           <div className="text-sm text-white">
-                            {game.questionsAnswered?.length || 0}题
+                            {game.questionsAnswered?.length || 0}{t('questions_suffix')}
                           </div>
                         </div>
                         <div 
@@ -656,13 +657,13 @@ export default function LearningReport() {
           onClick={handleExport}
           className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white text-sm font-bold transition-colors"
         >
-          📥 导出报告
+          📥 {t('export_report_btn')}
         </button>
         <button
           onClick={() => setIsOpen(false)}
           className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white text-sm font-bold transition-colors"
         >
-          关闭
+          {t('close_btn')}
         </button>
       </div>
     </div>

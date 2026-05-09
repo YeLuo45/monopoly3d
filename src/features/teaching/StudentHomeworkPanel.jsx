@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getStudentCommunicator, StudentStatus } from '../../communication/broadcastChannel';
+import { t } from '../../i18n';
 
 /**
  * StudentHomeworkPanel - Popup for student homework/assignments
@@ -62,7 +63,7 @@ export default function StudentHomeworkPanel() {
           <div className="flex items-center gap-4">
             <div className="text-5xl">📝</div>
             <div>
-              <div className="text-purple-300 text-sm">教师布置的作业</div>
+              <div className="text-purple-300 text-sm">{t('homework_from_teacher')}</div>
               <h2 className="text-2xl font-bold text-white">{homework.title}</h2>
             </div>
           </div>
@@ -73,7 +74,7 @@ export default function StudentHomeworkPanel() {
           {/* Due date */}
           {homework.dueDate && (
             <div className="flex items-center gap-2 mb-4 text-sm">
-              <span className="text-gray-400">截止日期:</span>
+              <span className="text-gray-400">{t('due_date_prefix')}</span>
               <span className="text-yellow-400 font-bold">{homework.dueDate}</span>
             </div>
           )}
@@ -81,16 +82,16 @@ export default function StudentHomeworkPanel() {
           {/* Content */}
           <div className="bg-black/30 rounded-xl p-4 mb-4">
             <div className="text-gray-300 leading-relaxed">
-              {homework.content || '无具体内容，请查看教师说明'}
+              {homework.content || t('no_specific_content')}
             </div>
           </div>
           
           {/* From */}
           <div className="text-gray-400 text-sm">
-            布置教师: <span className="text-purple-300">{homework.assignedBy || '教师'}</span>
+            {t('assigned_by_teacher')}: <span className="text-purple-300">{homework.assignedBy || t('assigned_by_label')}</span>
           </div>
           <div className="text-gray-400 text-sm mt-1">
-            布置时间: <span className="text-purple-300">
+            {t('assigned_time')}: <span className="text-purple-300">
               {new Date(homework.createdAt).toLocaleString()}
             </span>
           </div>
@@ -102,13 +103,13 @@ export default function StudentHomeworkPanel() {
             onClick={handleClose}
             className="flex-1 px-4 py-3 bg-gray-600 hover:bg-gray-500 rounded-xl text-white font-bold"
           >
-            稍后完成
+            {t('complete_later')}
           </button>
           <button
             onClick={handleComplete}
             className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-500 rounded-xl text-white font-bold"
           >
-            ✅ 标记完成
+            {t('mark_complete')}
           </button>
         </div>
       </div>
