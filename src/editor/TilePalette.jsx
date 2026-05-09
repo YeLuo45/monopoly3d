@@ -1,5 +1,6 @@
 import useEditorStore from './editorStore';
 import { TILE_TYPES, TILE_TYPE_INFO } from './editorTypes';
+import { t } from '../i18n';
 
 /**
  * Visual Tile Palette - Quick tile type selector with 8 tile types
@@ -21,17 +22,17 @@ export default function TilePalette() {
   return (
     <div className="bg-gray-900/95 rounded-lg p-4 text-white">
       <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
-        <span>🎨</span> 快速选择格子类型
+        <span>🎨</span> {t('quick_select_tile_type')}
       </h3>
       
       {/* Selected tile indicator */}
       {selectedTileIndex !== null ? (
         <div className="text-xs text-gray-400 mb-3">
-          已选择: 格子 #{selectedTileIndex + 1} ({currentType && TILE_TYPE_INFO[currentType]?.label || '未知'})
+          {t('selected_tile')}: {t('tile_number')}{selectedTileIndex + 1} ({currentType && TILE_TYPE_INFO[currentType]?.label || t('unknown')})
         </div>
       ) : (
         <div className="text-xs text-gray-400 mb-3">
-          点击棋盘上的格子后再选择类型
+          {t('click_tile_first')}
         </div>
       )}
 
@@ -77,7 +78,7 @@ export default function TilePalette() {
       {/* Type statistics */}
       {selectedTileIndex !== null && (
         <div className="mt-4 pt-3 border-t border-gray-700">
-          <div className="text-xs text-gray-400 mb-2">当前地图类型分布:</div>
+          <div className="text-xs text-gray-400 mb-2">{t('current_map_type_distribution')}:</div>
           <div className="grid grid-cols-4 gap-1">
             {Object.entries(TILE_TYPE_INFO).map(([type, info]) => {
               const count = tiles.filter(t => t.type === type).length;
