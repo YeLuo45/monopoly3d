@@ -363,8 +363,10 @@ export default function MenuScreen() {
 
   return (
     <div className="flex flex-col h-screen text-white overflow-hidden">
+      {/* Page centered wrapper */}
+      <div className="flex flex-col items-center w-full max-w-3xl mx-auto shrink-0">
       {/* Header */}
-      <div className="flex items-center justify-between px-8 py-4 shrink-0">
+      <div className="flex items-center justify-between w-full px-4 py-4 shrink-0">
         <div className="flex items-center gap-3">
           <span className="text-3xl">🏦</span>
           <div>
@@ -382,7 +384,7 @@ export default function MenuScreen() {
       </div>
 
       {/* Tab Bar */}
-      <div className="flex gap-1 px-6 shrink-0 border-b border-white/10">
+      <div className="flex gap-1 px-2 w-full shrink-0 border-b border-white/10">
         {[
           { key: 'game',    icon: '🎮', label: t('tab_game')    || '游戏' },
           { key: 'social', icon: '🌐', label: t('tab_social')  || '社交' },
@@ -392,7 +394,7 @@ export default function MenuScreen() {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all ${
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all flex-1 justify-center ${
               activeTab === tab.key
                 ? 'border-pink-500 text-pink-400 bg-pink-500/10'
                 : 'border-transparent text-gray-400 hover:text-white hover:bg-white/5'
@@ -403,10 +405,11 @@ export default function MenuScreen() {
           </button>
         ))}
       </div>
+      </div>
 
       {/* Tab Content */}
-      <div className="flex-1 overflow-y-auto px-6 py-6">
-        <div className="max-w-3xl mx-auto">
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-3xl mx-auto px-4 py-6">
 
           {/* 🎮 游戏 */}
           {activeTab === 'game' && (
