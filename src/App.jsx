@@ -18,7 +18,7 @@ const EditorPage = lazy(() => import('./editor/EditorPage'));
 import './index.css';
 
 // Achievement System
-import { AchievementPopup, TaskProgress, WeatherIndicator, LeaderboardPanel, AchievementPanel, DailyChallengeScreen } from './features/achievement';
+import { AchievementPopup, TaskProgress, WeatherIndicator, Leaderboard, LeaderboardPanel, AchievementPanel, DailyChallengeScreen } from './features/achievement';
 
 // Teaching Tools
 import { TeacherPage, StudentHomeworkPanel } from './features/teaching';
