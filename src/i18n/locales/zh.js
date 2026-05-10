@@ -18,6 +18,12 @@ export default {
   about_game: '关于游戏',
   creative_workshop: '创意工坊',
 
+  // Tab navigation
+  tab_game: '游戏',
+  tab_social: '社交',
+  tab_tools: '工具',
+  tab_account: '账户',
+
   // Welcome prompt
   welcome_title: '欢迎来到大富翁3D',
   welcome_subtitle: '请输入你的名字开始学习吧！',

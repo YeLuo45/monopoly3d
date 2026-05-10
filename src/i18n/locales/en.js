@@ -18,6 +18,12 @@ export default {
   about_game: 'About',
   creative_workshop: 'Workshop',
 
+  // Tab navigation
+  tab_game: 'Game',
+  tab_social: 'Social',
+  tab_tools: 'Tools',
+  tab_account: 'Account',
+
   // Welcome prompt
   welcome_title: 'Welcome to Monopoly 3D',
   welcome_subtitle: 'Enter your name to start learning!',
