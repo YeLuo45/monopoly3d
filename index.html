@@ -4,10 +4,23 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1e3a5f" />
+    <meta name="description" content="3D Monopoly Board Game - Educational Edition" />
+    <link rel="manifest" href="/monopoly3d/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/monopoly3d/apple-touch-icon.png" />
     <title>大富翁3D - Educational Edition</title>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/monopoly3d/sw.js', { scope: '/monopoly3d/' })
+            .then(reg => console.log('SW registered:', reg.scope))
+            .catch(err => console.warn('SW registration failed:', err));
+        });
+      }
+    </script>
   </body>
 </html>
