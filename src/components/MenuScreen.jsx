@@ -62,6 +62,9 @@ export default function MenuScreen() {
   const [joinCode, setJoinCode] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionError, setConnectionError] = useState('');
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [playerCount, setPlayerCount] = useState(1);
 
   const [showReplayList, setShowReplayList] = useState(false);
   const [activeTab, setActiveTab] = useState('game');
@@ -139,8 +142,34 @@ export default function MenuScreen() {
     setRoomCode('');
     setJoinCode('');
     setConnectionError('');
+    setChatMessages([]);
     setShowLANMultiplayerMenu(false);
   };
+
+  const handleSendChat = () => {
+    if (!chatInput.trim() || !window.monopolyMultiplayer) return;
+    const playerName = multiplayerMode === 'host' ? t('host') : t('player');
+    window.monopolyMultiplayer.sendChatMessage(chatInput.trim(), playerName);
+    setChatInput('');
+  };
+
+  // Register chat message callback when multiplayer is active
+  useEffect(() => {
+    if (!window.monopolyMultiplayer || !multiplayerMode) return;
+    window.monopolyMultiplayer.onChatMessage((data) => {
+      setChatMessages((prev) => [...prev, { ...data, id: Date.now() }]);
+    });
+  }, [multiplayerMode]);
+
+  // Register status change callback for player count updates
+  useEffect(() => {
+    if (!window.monopolyMultiplayer || !multiplayerMode) return;
+    window.monopolyMultiplayer.onStatusChange((status) => {
+      if (status.players) {
+        setPlayerCount(status.players.length);
+      }
+    });
+  }, [multiplayerMode]);
 
   const handleOnlineMultiplayerBack = () => {
     setShowOnlineMultiplayer(false);
@@ -325,8 +354,39 @@ export default function MenuScreen() {
                 {t('share_code')}
               </p>
               <div className="text-gray-400 text-xs mb-4">
-                {t('players_connected')}: 1/{6}
+                {t('players_connected')}: {playerCount}/{6}
               </div>
+
+              {/* Chat Section */}
+              <div className="bg-black/20 rounded-xl p-3 mb-4 max-h-32 overflow-y-auto">
+                {chatMessages.length === 0 ? (
+                  <div className="text-gray-500 text-xs">{t('no_messages') || '暂无消息'}</div>
+                ) : (
+                  chatMessages.map((msg) => (
+                    <div key={msg.id} className="text-sm mb-1">
+                      <span className="text-purple-400">{msg.playerName}: </span>
+                      <span className="text-white">{msg.message}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="flex gap-2 mb-4">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
+                  placeholder={t('type_message') || '输入消息...'}
+                  className="flex-1 px-3 py-2 bg-black/30 border border-purple-500/50 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none"
+                />
+                <button
+                  onClick={handleSendChat}
+                  className="px-4 py-2 bg-purple-600 rounded-lg text-white text-sm font-bold hover:bg-purple-500"
+                >
+                  {t('send') || '发送'}
+                </button>
+              </div>
+
               <button
                 onClick={handleStartMultiplayerGame}
                 className="w-full px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 rounded-xl font-bold"
@@ -348,6 +408,37 @@ export default function MenuScreen() {
               <p className="text-purple-300 text-sm mb-4">
                 {t('waiting_host')}
               </p>
+
+              {/* Chat Section */}
+              <div className="bg-black/20 rounded-xl p-3 mb-4 max-h-32 overflow-y-auto">
+                {chatMessages.length === 0 ? (
+                  <div className="text-gray-500 text-xs">{t('no_messages') || '暂无消息'}</div>
+                ) : (
+                  chatMessages.map((msg) => (
+                    <div key={msg.id} className="text-sm mb-1">
+                      <span className="text-purple-400">{msg.playerName}: </span>
+                      <span className="text-white">{msg.message}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="flex gap-2 mb-4">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
+                  placeholder={t('type_message') || '输入消息...'}
+                  className="flex-1 px-3 py-2 bg-black/30 border border-purple-500/50 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none"
+                />
+                <button
+                  onClick={handleSendChat}
+                  className="px-4 py-2 bg-purple-600 rounded-lg text-white text-sm font-bold hover:bg-purple-500"
+                >
+                  {t('send') || '发送'}
+                </button>
+              </div>
+
               <button
                 onClick={handleCancelMultiplayer}
                 className="w-full px-6 py-3 bg-gray-600 rounded-xl font-bold"

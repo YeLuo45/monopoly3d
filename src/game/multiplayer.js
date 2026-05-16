@@ -218,6 +218,10 @@ class MultiplayerManager {
       this.connections.set(conn.peer, conn);
       this.setupClientEvents(conn);
       
+      // Add new player to our list
+      const newPlayer = { id: conn.peer, name: `玩家${this.connectedPlayers.length + 1}` };
+      this.connectedPlayers.push(newPlayer);
+      
       // Send current players list to new player
       conn.send({
         type: 'player-joined',
@@ -225,7 +229,18 @@ class MultiplayerManager {
         isHost: this.isHost,
       });
       
+      // Broadcast updated player list to all existing players
+      this.connections.forEach((existingConn) => {
+        if (existingConn !== conn) {
+          existingConn.send({
+            type: 'players-updated',
+            players: this.connectedPlayers,
+          });
+        }
+      });
+      
       this.notifyPlayerJoin(conn.peer);
+      this.notifyStatusChange();
     });
 
     conn.on('error', (err) => {
@@ -250,6 +265,11 @@ class MultiplayerManager {
           this.notifyStatusChange();
           break;
           
+        case 'players-updated':
+          this.connectedPlayers = data.players;
+          this.notifyStatusChange();
+          break;
+
         case 'player-left':
           this.removeConnection(conn.peer);
           break;
