@@ -67,6 +67,11 @@ const initialState = {
   // Room list (for browsing)
   availableRooms: [],
   
+  // Reconnection state
+  isReconnecting: false,
+  reconnectAttempts: 0,
+  maxReconnectAttempts: 5,
+  
   // Replay recording
   isRecordingReplay: false,
   replayId: null,
@@ -139,7 +144,106 @@ export const useMultiplayerStore = create((set, get) => ({
       playerId: get().playerId,
       playerName: get().playerName,
       playerColor: get().playerColor,
+      reconnectAttempts: 0,
+      isReconnecting: false,
     });
+  },
+
+  // ============================================
+  // RECONNECTION
+  // ============================================
+  
+  /**
+   * Attempt to reconnect to the current room
+   */
+  reconnect: async () => {
+    const { currentRoom, roomCode, isReconnecting, reconnectAttempts, maxReconnectAttempts } = get();
+    
+    if (!currentRoom || !roomCode) {
+      console.log('[MultiplayerStore] No room to reconnect to');
+      return false;
+    }
+    
+    if (isReconnecting) {
+      console.log('[MultiplayerStore] Already reconnecting');
+      return false;
+    }
+    
+    if (reconnectAttempts >= maxReconnectAttempts) {
+      console.log('[MultiplayerStore] Max reconnection attempts reached');
+      set({ connectionError: '连接失败，请重新加入房间', isReconnecting: false });
+      return false;
+    }
+    
+    set({ isReconnecting: true, reconnectAttempts: reconnectAttempts + 1 });
+    
+    try {
+      console.log(`[MultiplayerStore] Reconnecting... (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+      
+      // Re-subscribe to room
+      get().subscribeToRoom(currentRoom.id);
+      
+      // Update player online status
+      const { playerId } = get();
+      await supabase
+        .from('players')
+        .update({ is_online: true })
+        .eq('room_id', currentRoom.id)
+        .eq('player_id', playerId);
+      
+      // Refresh players list
+      await get().refreshPlayers();
+      
+      set({ isReconnecting: false, connectionError: null });
+      console.log('[MultiplayerStore] Reconnected successfully');
+      return true;
+    } catch (err) {
+      console.error('[MultiplayerStore] Reconnection failed:', err);
+      set({ isReconnecting: false });
+      
+      // Retry with exponential backoff
+      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+      setTimeout(() => {
+        get().reconnect();
+      }, delay);
+      
+      return false;
+    }
+  },
+
+  /**
+   * Setup connection loss detection and auto-reconnect
+   */
+  setupConnectionMonitoring: () => {
+    // Monitor for online/offline events
+    const handleOnline = () => {
+      console.log('[MultiplayerStore] Network online, attempting reconnect');
+      const { currentRoom, isConnected } = get();
+      if (currentRoom && !isConnected) {
+        get().reconnect();
+      }
+    };
+    
+    const handleOffline = () => {
+      console.log('[MultiplayerStore] Network offline');
+      set({ isConnected: false, connectionError: '网络连接已断开' });
+    };
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    // Return cleanup function
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  },
+
+  /**
+   * Clear reconnection state
+   */
+  clearReconnectState: () => {
+    set({ isReconnecting: false, reconnectAttempts: 0 });
   },
   
   // ============================================
@@ -333,10 +437,23 @@ export const useMultiplayerStore = create((set, get) => ({
         
         if (otherPlayers && otherPlayers.length > 0) {
           // Transfer host to other player
+          const newHostId = otherPlayers[0].player_id;
           await supabase
             .from('rooms')
-            .update({ host_id: otherPlayers[0].player_id })
+            .update({ host_id: newHostId })
             .eq('id', currentRoom.id);
+          
+          // Notify the new host via game event
+          await supabase
+            .from('game_events')
+            .insert({
+              room_id: currentRoom.id,
+              player_id: playerId, // old host
+              event_type: 'host_transfer',
+              payload: { new_host_id: newHostId, old_host_id: playerId },
+            });
+          
+          console.log('[MultiplayerStore] Host transferred to:', newHostId);
         } else {
           // No other players, delete room
           await supabase
@@ -382,13 +499,23 @@ export const useMultiplayerStore = create((set, get) => ({
         filter: `id=eq.${roomId}`,
       }, (payload) => {
         console.log('[MultiplayerStore] Room updated:', payload);
-        const { currentRoom } = get();
+        const { currentRoom, playerId } = get();
         if (currentRoom) {
-          set({ currentRoom: { ...currentRoom, ...payload.new } });
+          const updatedRoom = { ...currentRoom, ...payload.new };
+          set({ currentRoom: updatedRoom });
           
           // Check if game started
           if (payload.new.status === 'playing' && currentRoom.status === 'waiting') {
             get().onGameStart();
+          }
+          
+          // Check if host changed
+          if (payload.new.host_id && payload.new.host_id !== currentRoom.host_id) {
+            const amNewHost = payload.new.host_id === playerId;
+            set({ isHost: amNewHost });
+            if (amNewHost) {
+              console.log('[MultiplayerStore] You are now the host!');
+            }
           }
         }
       })
@@ -585,19 +712,106 @@ export const useMultiplayerStore = create((set, get) => ({
     }
   },
   
-  /**
-   * Handle game start callback - override this in component
+/**
+   * Handle game start callback - called when room status changes to 'playing'
    */
   onGameStart: () => {
     console.log('[MultiplayerStore] Game started!');
-    // This will be connected to the game store
+    const { currentRoom, players, recordGameEvent } = get();
+    
+    if (!currentRoom) return;
+    
+    // Notify via chat that game is starting
+    recordGameEvent('game_start', {
+      roomId: currentRoom.id,
+      playerCount: players.length,
+      timestamp: Date.now(),
+    });
+    
+    // Set game start time for replay recording
+    set({ gameStartTime: Date.now() });
   },
-  
+
   /**
-   * Handle incoming game event - override this in component
+   * Handle incoming game event from other players
+   * Processes and syncs game state across all clients
    */
   onGameEvent: (event) => {
     console.log('[MultiplayerStore] Game event received:', event);
+    const { event_type, payload, player_id } = event;
+    
+    // Prevent processing own events (they're already applied locally)
+    const { playerId } = get();
+    if (player_id === playerId) return;
+    
+    // Process different event types
+    switch (event_type) {
+      case 'dice_roll':
+        // Sync dice results to all players
+        set({ lastRemoteDiceRoll: payload });
+        break;
+        
+      case 'player_move':
+        // Update player position
+        set(state => ({
+          players: state.players.map(p => 
+            p.player_id === player_id 
+              ? { ...p, position: payload.position, money: payload.money }
+              : p
+          )
+        }));
+        break;
+        
+      case 'property_purchase':
+        // Update property ownership
+        set(state => ({
+          players: state.players.map(p =>
+            p.player_id === player_id
+              ? { ...p, money: payload.money, properties: [...(p.properties || []), payload.propertyId] }
+              : p
+          )
+        }));
+        break;
+        
+      case 'property_auction':
+        // Handle auction results
+        if (payload.winner_id === playerId) {
+          set(state => ({
+            players: state.players.map(p =>
+              p.player_id === playerId
+                ? { ...p, money: payload.finalPrice, properties: [...(p.properties || []), payload.propertyId] }
+                : p
+            )
+          }));
+        }
+        break;
+        
+      case 'turn_change':
+        // Update current turn
+        set({ currentTurn: payload.turn_index, currentPlayerId: payload.player_id });
+        break;
+        
+      case 'game_start':
+        // Game has started - trigger UI transition
+        console.log('[MultiplayerStore] Game start event received, transitioning to game...');
+        break;
+        
+      case 'game_end':
+        // Handle game over
+        set({ isGameOver: true, winner: payload.winner_id });
+        break;
+        
+      case 'host_transfer':
+        // Host has been transferred
+        if (payload.new_host_id === playerId) {
+          set({ isHost: true });
+          console.log('[MultiplayerStore] You are now the host!');
+        }
+        break;
+        
+      default:
+        console.log('[MultiplayerStore] Unknown event type:', event_type);
+    }
   },
   
   // ============================================

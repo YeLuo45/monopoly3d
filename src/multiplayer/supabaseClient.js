@@ -29,9 +29,32 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 
 // Helper to check if Supabase is properly configured
+// Checks for real Supabase project URL pattern (not placeholder values)
 export const isSupabaseConfigured = () => {
-  return SUPABASE_URL !== 'https://your-project.supabase.co' && 
-         SUPABASE_ANON_KEY !== 'your-anon-key';
+  // Must have a valid Supabase URL pattern: https://*.supabase.co or custom domain
+  const hasValidUrl = SUPABASE_URL && 
+    SUPABASE_URL !== 'https://your-project.supabase.co' &&
+    /^(https?:\/\/)?[\w-]+\.[\w.-]+/.test(SUPABASE_URL);
+  
+  // Must have a non-empty anon key that's not the placeholder
+  const hasValidKey = SUPABASE_ANON_KEY && 
+    SUPABASE_ANON_KEY !== 'your-anon-key' &&
+    SUPABASE_ANON_KEY.length > 20;
+  
+  return hasValidUrl && hasValidKey;
+};
+
+// Debug function to check configuration status
+export const getConfigStatus = () => {
+  const urlConfigured = SUPABASE_URL && SUPABASE_URL !== 'https://your-project.supabase.co';
+  const keyConfigured = SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== 'your-anon-key';
+  return {
+    urlConfigured,
+    keyConfigured,
+    url: urlConfigured ? 'Configured' : 'Missing',
+    key: keyConfigured ? 'Configured' : 'Missing',
+    ready: isSupabaseConfigured(),
+  };
 };
 
 export default supabase;
