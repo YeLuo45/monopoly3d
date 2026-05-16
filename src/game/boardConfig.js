@@ -111,7 +111,8 @@ export const BOARD_CONFIG = (() => {
 export const BOARD_SIZE = BOARD_CONFIG.length;
 
 // Question tile IDs
-export const QUESTION_TILE_IDS = [7, 17, 25, 29, 34];
+// Question tile IDs - corrected: tile 29 is CHANCE, not QUESTION
+export const QUESTION_TILE_IDS = [7, 17, 25, 34];
 
 export const STARTING_MONEY = 1500;
 export const PASSING_GO_BONUS = 200;

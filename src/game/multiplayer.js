@@ -55,6 +55,20 @@ class MultiplayerManager {
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' },
+            // TURN servers for NAT traversal
+            {
+              urls: 'turn:openrelay.metered.ca:80',
+              username: 'openrelay',
+              credential: 'openrelay',
+            },
+            {
+              urls: 'turn:openrelay.metered.ca:443',
+              username: 'openrelay',
+              credential: 'openrelay',
+            },
           ],
         },
       });
@@ -128,6 +142,20 @@ class MultiplayerManager {
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' },
+            // TURN servers for NAT traversal
+            {
+              urls: 'turn:openrelay.metered.ca:80',
+              username: 'openrelay',
+              credential: 'openrelay',
+            },
+            {
+              urls: 'turn:openrelay.metered.ca:443',
+              username: 'openrelay',
+              credential: 'openrelay',
+            },
           ],
         },
       });
@@ -136,21 +164,19 @@ class MultiplayerManager {
         reject(new Error('连接超时，请检查房间码是否正确'));
       }, 10000);
 
-      this.peer.on('open', () => {
+      this.peer.on('open', (id) => {
         console.log('[Multiplayer] Connected to peer network');
-      });
-
-      this.peer.on('error', (err) => {
-        console.error('[Multiplayer] Peer error:', err);
-        clearTimeout(timeout);
-        reject(err);
-      });
-
-      this.peer.on('open', () => {
+        
+        // Connect to host using the room code
+        const hostPeerId = `monopoly3d-${this.roomCode}`;
         const conn = this.peer.connect(hostPeerId, {
           reliable: true,
           serialization: 'json',
         });
+
+        const timeout = setTimeout(() => {
+          reject(new Error('连接超时，请检查房间码是否正确'));
+        }, 10000);
 
         conn.on('open', () => {
           console.log('[Multiplayer] Connected to host');
@@ -166,6 +192,12 @@ class MultiplayerManager {
           clearTimeout(timeout);
           reject(err);
         });
+      });
+
+      this.peer.on('error', (err) => {
+        console.error('[Multiplayer] Peer error:', err);
+        clearTimeout(timeout);
+        reject(err);
       });
     });
   }
@@ -231,6 +263,13 @@ class MultiplayerManager {
           this.isHost = true;
           this.notifyStatusChange();
           break;
+
+        case 'chat':
+          // Receive chat message from host or other clients
+          if (this.onChatMessageCallback) {
+            this.onChatMessageCallback(data);
+          }
+          break;
       }
     });
 
@@ -260,6 +299,9 @@ class MultiplayerManager {
       console.warn('[Multiplayer] Only host can broadcast state');
       return;
     }
+
+    // Store state for late-joining spectators
+    this.currentGameState = state;
 
     const message = {
       type: 'game-state',
@@ -324,6 +366,47 @@ class MultiplayerManager {
   }
 
   /**
+   * Register callback for chat messages
+   * @param {Function} callback - Called with { playerId, playerName, message }
+   */
+  onChatMessage(callback) {
+    this.onChatMessageCallback = callback;
+  }
+
+  /**
+   * Send a chat message to all players
+   * @param {string} message - The chat message
+   * @param {string} playerName - Sender's name
+   */
+  sendChatMessage(message, playerName) {
+    const data = {
+      type: 'chat',
+      playerId: this.peer?.id || 'unknown',
+      playerName: playerName || '玩家',
+      message: message,
+      timestamp: Date.now(),
+    };
+
+    if (this.isHost) {
+      // Host broadcasts to all clients
+      this.connections.forEach((conn) => {
+        try {
+          conn.send(data);
+        } catch (err) {
+          console.error('[Multiplayer] Failed to send chat:', err);
+        }
+      });
+      // Also notify local callback
+      if (this.onChatMessageCallback) {
+        this.onChatMessageCallback(data);
+      }
+    } else {
+      // Client sends to host
+      this.sendToHost(data);
+    }
+  }
+
+  /**
    * Register callback for connection status changes
    * @param {Function} callback - Called with status object
    */
@@ -336,8 +419,13 @@ class MultiplayerManager {
    * @param {Object} data - Data to send
    */
   sendToHost(data) {
-    if (this.isHost || !this.connections.size) {
-      console.warn('[Multiplayer] Client must be connected to send to host');
+    if (this.isHost) {
+      console.warn('[Multiplayer] Host cannot send to itself');
+      return;
+    }
+
+    if (!this.connections.size) {
+      console.warn('[Multiplayer] No connections to send to');
       return;
     }
 
@@ -345,6 +433,52 @@ class MultiplayerManager {
     if (hostConn && hostConn.open) {
       hostConn.send(data);
     }
+  }
+
+  /**
+   * Broadcast data to all connections (used by host for chat/spectator sync)
+   * @param {Object} data - Data to broadcast
+   */
+  broadcast(data) {
+    this.connections.forEach((conn) => {
+      try {
+        conn.send(data);
+      } catch (err) {
+        console.error('[Multiplayer] Failed to broadcast:', err);
+      }
+    });
+  }
+
+  /**
+   * Add a spectator connection (read-only, receives game state updates)
+   * @param {Object} conn - PeerJS connection
+   */
+  addSpectator(conn) {
+    conn.on('open', () => {
+      console.log('[Multiplayer] New spectator:', conn.peer);
+      conn.send({
+        type: 'spectator-join',
+        roomCode: this.roomCode,
+      });
+      // Send current game state to spectator
+      if (this.currentGameState) {
+        conn.send({
+          type: 'game-state',
+          state: this.currentGameState,
+        });
+      }
+    });
+
+    conn.on('data', (data) => {
+      // Spectators don't send game commands, only chat
+      if (data.type === 'chat' && this.onChatMessageCallback) {
+        this.onChatMessageCallback({ ...data, isSpectator: true });
+      }
+    });
+
+    conn.on('close', () => {
+      console.log('[Multiplayer] Spectator left:', conn.peer);
+    });
   }
 
   /**

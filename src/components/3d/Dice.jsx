@@ -45,77 +45,180 @@ function DiceFace({ value, position, rotation, faceColor }) {
 
 function Die({ position, value, rolling }) {
   const meshRef = useRef();
-  const targetRotation = useRef({ x: 0, y: 0 });
+  const targetRotation = useRef({ x: 0, y: 0, z: 0 });
   const prevRolling = useRef(rolling);
-  const bounceY = useRef(0);
-  const bounceVel = useRef(0);
+  
+  // Physics state refs
+  const physicsState = useRef({
+    phase: 'idle', // 'idle' | 'airborne' | 'bouncing' | 'settling'
+    airborneTime: 0,
+    airborneDuration: 0.6, // Time in air
+    peakHeight: 1.8, // Maximum Y height reached
+    baseY: 0,
+    
+    // Rotation physics
+    rotVelX: 0,
+    rotVelY: 0,
+    rotVelZ: 0,
+    
+    // Bounce physics
+    bounceY: 0,
+    bounceVel: 0,
+    bounceCount: 0,
+    maxBounces: 3,
+    bounceDecay: 0.45, // Energy retention per bounce
+    
+    // Settling
+    settleTime: 0,
+  });
+  
   const rollStartTime = useRef(0);
-  const ROLL_DURATION = 1.2; // 1.2 seconds ease-out rolling
+  const ROLL_DURATION = 1.4; // Total roll duration
 
   useEffect(() => {
+    const faceRotations = {
+      1: [0, 0, 0],
+      2: [0, Math.PI / 2, 0],
+      3: [-Math.PI / 2, 0, 0],
+      4: [Math.PI / 2, 0, 0],
+      5: [0, -Math.PI / 2, 0],
+      6: [Math.PI, 0, 0],
+    };
+    
     if (rolling && !prevRolling.current) {
-      // Start of rolling - reset bounce
+      // Start of rolling - initialize physics
       rollStartTime.current = Date.now();
-      bounceVel.current = 0.3;
+      const ps = physicsState.current;
+      ps.phase = 'airborne';
+      ps.airborneTime = 0;
+      ps.airborneDuration = 0.5 + Math.random() * 0.2; // Slight variation
+      ps.bounceCount = 0;
+      ps.bounceY = 0;
+      ps.bounceVel = 0;
+      ps.settleTime = 0;
+      
+      // Randomize initial rotation velocities for variety
+      ps.rotVelX = 15 + Math.random() * 8;
+      ps.rotVelY = 12 + Math.random() * 6;
+      ps.rotVelZ = 4 + Math.random() * 4;
     }
-    // When rolling stops, start bounce-out settle
+    
     if (prevRolling.current && !rolling) {
-      const faceRotations = {
-        1: [0, 0],
-        2: [0, Math.PI / 2],
-        3: [-Math.PI / 2, 0],
-        4: [Math.PI / 2, 0],
-        5: [0, -Math.PI / 2],
-        6: [Math.PI, 0],
-      };
-      const [rx, ry] = faceRotations[value] || [0, 0];
-      if (meshRef.current) {
-        meshRef.current.rotation.x = rx;
-        meshRef.current.rotation.y = ry;
-      }
-      targetRotation.current = { x: rx, y: ry };
-      // Trigger bounce on landing
-      bounceVel.current = 0.25;
+      // Rolling stopped - prepare for landing
+      const ps = physicsState.current;
+      ps.phase = 'bouncing';
+      ps.bounceCount = 0;
+      ps.bounceY = 0;
+      
+      // Initial downward velocity from airborne phase
+      ps.bounceVel = 0.35 + Math.random() * 0.15;
+      
+      // Set target rotation for final face
+      const [rx, ry, rz] = faceRotations[value] || [0, 0, 0];
+      targetRotation.current = { x: rx, y: ry, z: rz };
     }
+    
     prevRolling.current = rolling;
   }, [rolling, value]);
 
   useFrame((_, delta) => {
     if (!meshRef.current) return;
+    
+    const ps = physicsState.current;
+    const mesh = meshRef.current;
 
-    // Bounce physics for landing
-    if (bounceVel.current !== 0) {
-      bounceY.current += bounceVel.current;
-      bounceVel.current -= delta * 2.5; // gravity
-      if (bounceY.current <= 0) {
-        bounceY.current = 0;
-        bounceVel.current *= -0.4; // bounce damping
-        if (Math.abs(bounceVel.current) < 0.02) {
-          bounceVel.current = 0;
+    if (ps.phase === 'airborne') {
+      // Parabolic arc trajectory
+      ps.airborneTime += delta;
+      const t = ps.airborneTime / ps.airborneDuration;
+      
+      if (t < 1) {
+        // Parabolic Y motion: rises then falls
+        // Using parabola: y = 4 * peakHeight * t * (1 - t)
+        const parabolicY = 4 * ps.peakHeight * t * (1 - t);
+        mesh.position.y = parabolicY;
+        
+        // Decelerating rotation - fast at start, slow at end
+        const easeFactor = 1 - Math.pow(1 - t, 2.5);
+        const rotFactor = 1 - easeFactor * 0.75;
+        
+        mesh.rotation.x += delta * ps.rotVelX * rotFactor;
+        mesh.rotation.y += delta * ps.rotVelY * rotFactor;
+        mesh.rotation.z += delta * ps.rotVelZ * rotFactor;
+        
+        // Slight wobble
+        mesh.rotation.z += Math.sin(t * Math.PI * 6) * delta * 0.5;
+      } else {
+        // Transition to bounce phase
+        mesh.position.y = 0;
+        ps.phase = 'bouncing';
+        ps.bounceVel = 0.4 + Math.random() * 0.1;
+      }
+    }
+    
+    if (ps.phase === 'bouncing') {
+      // Realistic bounce with energy decay
+      ps.bounceY += ps.bounceVel;
+      ps.bounceVel -= delta * 4.0; // gravity
+      
+      if (ps.bounceY <= 0) {
+        ps.bounceY = 0;
+        ps.bounceCount++;
+        
+        // Only bounce 2-3 times
+        if (ps.bounceCount >= ps.maxBounces) {
+          ps.bounceVel = 0;
+          ps.bounceY = 0;
+          ps.phase = 'settling';
+          mesh.position.y = 0;
+        } else {
+          // Energy decay on each bounce
+          ps.bounceVel *= -ps.bounceDecay;
+          ps.bounceVel += 0.05; // Small extra push
         }
       }
-      meshRef.current.position.y = bounceY.current;
+      
+      mesh.position.y = ps.bounceY;
+      
+      // Continue rotation during bounce with rapid decay
+      const rotDecay = Math.pow(0.6, ps.bounceCount);
+      mesh.rotation.x += delta * ps.rotVelX * 0.3 * rotDecay;
+      mesh.rotation.y += delta * ps.rotVelY * 0.3 * rotDecay;
+      mesh.rotation.z += delta * ps.rotVelZ * 0.2 * rotDecay;
     }
-
-    if (rolling) {
-      // Calculate progress through roll duration
-      const elapsed = (Date.now() - rollStartTime.current) / 1000;
-      const progress = Math.min(elapsed / ROLL_DURATION, 1);
-      // Ease-out deceleration: fast start, slow end
-      const easeFactor = 1 - Math.pow(1 - progress, 3);
+    
+    if (ps.phase === 'settling') {
+      // Smooth snap to target face orientation
+      ps.settleTime += delta;
+      const settleFactor = 1 - Math.pow(1 - Math.min(ps.settleTime / 0.4, 1), 3);
       
-      // Tumbling animation with deceleration
-      meshRef.current.rotation.x += delta * 18 * (1 - easeFactor * 0.7);
-      meshRef.current.rotation.y += delta * 14 * (1 - easeFactor * 0.7);
-      meshRef.current.rotation.z += delta * 6 * (1 - easeFactor * 0.7);
+      mesh.rotation.x += (targetRotation.current.x - mesh.rotation.x) * 0.18;
+      mesh.rotation.y += (targetRotation.current.y - mesh.rotation.y) * 0.18;
+      mesh.rotation.z += (targetRotation.current.z - mesh.rotation.z) * 0.18;
       
-      // Shadow intensity changes during roll
-      const shadowPulse = 0.5 + Math.sin(elapsed * 20) * 0.3;
-      meshRef.current.castShadow = true;
-    } else {
-      // Smooth snap to target face
-      meshRef.current.rotation.x += (targetRotation.current.x - meshRef.current.rotation.x) * 0.15;
-      meshRef.current.rotation.y += (targetRotation.current.y - meshRef.current.rotation.y) * 0.15;
+      // Small bounce settle
+      if (ps.settleTime < 0.3) {
+        const settleBounce = Math.sin(ps.settleTime * 20) * 0.02 * (1 - ps.settleTime / 0.3);
+        mesh.position.y = Math.max(0, settleBounce);
+      } else {
+        mesh.position.y = 0;
+      }
+      
+      if (ps.settleTime > 0.5) {
+        ps.phase = 'idle';
+        // Snap exactly to target
+        mesh.rotation.x = targetRotation.current.x;
+        mesh.rotation.y = targetRotation.current.y;
+        mesh.rotation.z = targetRotation.current.z;
+      }
+    }
+    
+    if (!rolling && ps.phase === 'idle') {
+      // Idle state - ensure dice is positioned correctly
+      mesh.position.y = 0;
+      mesh.rotation.x = targetRotation.current.x;
+      mesh.rotation.y = targetRotation.current.y;
+      mesh.rotation.z = targetRotation.current.z;
     }
   });
 

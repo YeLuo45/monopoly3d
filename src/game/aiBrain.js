@@ -4,7 +4,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { BOARD_CONFIG, BOARD_SIZE } from './boardConfig';
+import { BOARD_CONFIG, BOARD_SIZE } from './boardConfig.js';
 
 // AI Difficulty levels
 export const AI_DIFFICULTY = {
