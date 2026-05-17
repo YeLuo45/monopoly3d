@@ -1,6 +1,8 @@
 import { useState, useRef, useMemo } from 'react';
 import { useGameStore } from '../game/store';
 import { BOARD_CONFIG } from '../game/boardConfig';
+import LessonPlanEditor from '../features/learning/LessonPlanEditor';
+import AssignmentView from '../features/learning/AssignmentView';
 
 const ALL_CATEGORIES = ['math', 'shape', 'time', 'geography', 'science', 'reading', 'life', 'emotion', 'animal'];
 
@@ -236,7 +238,13 @@ export default function TeacherConsole() {
             📊 全班报告
           </button>
         </div>
-        
+
+        {/* Lesson Plan & Assignment */}
+        <div className="border-t border-gray-700 pt-3 flex flex-col gap-2">
+          <LessonPlanEditor />
+          <AssignmentView />
+        </div>
+
         <div className="border-t border-gray-700 pt-3">
           <div className="text-gray-400 text-xs mb-2">快捷操作</div>
           <div className="flex gap-2">
