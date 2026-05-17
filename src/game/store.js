@@ -111,6 +111,10 @@ const initialState = {
   // Teacher mode
   teacherMode: false,
   timerEnabled: true,
+  // Strategy guide & tips
+  showContextualTip: false,
+  currentTip: null, // { title, content, tool, timestamp }
+  tutorialStep: 0,
   aiThinkingDelayEnabled: true, // AI thinking delay toggle
 
   // Question bank management
@@ -1220,6 +1224,83 @@ export const useGameStore = create((set, get) => ({
   },
   
 toggleTeacherMode: () => set(s => ({ teacherMode: !s.teacherMode })),
+
+  // ==================== CONTEXTUAL TIPS SYSTEM ====================
+
+  /**
+   * Show a contextual tip using StrategyGuide tool
+   */
+  showTip: (title, content, toolResult = null) => {
+    set({
+      showContextualTip: true,
+      currentTip: {
+        title,
+        content,
+        data: toolResult,
+        timestamp: Date.now(),
+      },
+    });
+  },
+
+  /**
+   * Hide current tip
+   */
+  hideTip: () => {
+    set({ showContextualTip: false, currentTip: null });
+  },
+
+  /**
+   * Advance tutorial to next step
+   */
+  advanceTutorial: () => {
+    const state = get();
+    const nextStep = state.tutorialStep + 1;
+    if (nextStep <= 5) {
+      set({ tutorialStep: nextStep });
+      return nextStep;
+    }
+    return null; // Tutorial complete
+  },
+
+  /**
+   * Reset tutorial
+   */
+  resetTutorial: () => {
+    set({ tutorialStep: 0 });
+  },
+
+  /**
+   * Auto-evaluate and show tip for current game state
+   */
+  autoShowTip: () => {
+    const state = get();
+    if (!state.teacherMode) return;
+
+    const currentPlayer = state.players[state.currentPlayerIndex];
+    if (!currentPlayer || currentPlayer.isAI) return;
+
+    // Import dynamically to avoid circular deps
+    import('./strategyGuide.js').then(({ getPurchaseAdvice, analyzeGameState, suggestBuildLocation }) => {
+      if (state.phase === 'buy_property') {
+        const tile = BOARD_CONFIG[currentPlayer.position];
+        if (tile && tile.type === 'property' && !tile.owner) {
+          const advice = getPurchaseAdvice(currentPlayer, tile);
+          get().showTip(
+            `💡 购买建议: ${tile.name}`,
+            `${advice.shortTip}\n\n详细分析:\n${advice.reasons.join('\n')}`,
+            advice
+          );
+        }
+      } else if (state.phase === 'roll') {
+        // Show general strategic tip if player is struggling
+        const analysis = analyzeGameState(currentPlayer, state.players, state.currentRound);
+        if (analysis.recommendations.length > 0) {
+          const topRec = analysis.recommendations[0];
+          get().showTip(`📊 局势分析 (第${analysis.playerRank}名)`, topRec.text, analysis);
+        }
+      }
+    });
+  },
   toggleTimer: () => set(s => ({ timerEnabled: !s.timerEnabled })),
 
   // Category management

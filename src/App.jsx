@@ -24,7 +24,8 @@ import { AchievementPopup, TaskProgress, WeatherIndicator, Leaderboard, Leaderbo
 import { TeacherPage, StudentHomeworkPanel } from './features/teaching';
 
 // Learning Features
-import { AIAssistant, PracticeMode, LearningReport } from './features/learning';
+import AIAssistant from './features/learning/AIAssistant';
+import ContextualTip from './components/ContextualTip';
 
 // Online Multiplayer
 import OnlineLobby from './multiplayer/OnlineLobby';
@@ -147,6 +148,7 @@ function App() {
           <StudentHomeworkPanel />
           {/* Learning Features */}
           <AIAssistant />
+          <ContextualTip />
           <PracticeMode />
           <LearningReport />
         </>
