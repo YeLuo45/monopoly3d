@@ -4,8 +4,11 @@ import { useMultiplayerStore } from '../multiplayer/multiplayerStore';
 import { getLocalReplays } from '../multiplayer/ReplaySystem';
 import ReplayList from '../multiplayer/ReplayList';
 import ShopScreen from '../features/shop/ShopScreen';
+import WatchModePanel from '../features/aiWatch/WatchModePanel';
+import AIDecisionOverlay from '../features/aiWatch/AIDecisionOverlay';
 import { AchievementPanel, useAchievementStore } from '../features/achievement';
 import { ParentDashboard } from '../features/teaching';
+import { useAIWatchStore } from '../features/aiWatch/aiWatchStore';
 import { OnlineLobby } from '../multiplayer';
 import { LOCALES, getLocale, setLocale, getLocaleName, t } from '../i18n';
 
@@ -73,6 +76,7 @@ export default function MenuScreen() {
   const [showReplayList, setShowReplayList] = useState(false);
   const [showShop, setShowShop] = useState(false);
   const [showParentDashboard, setShowParentDashboard] = useState(false);
+  const [showWatchMode, setShowWatchMode] = useState(false);
   const [activeTab, setActiveTab] = useState('game');
   const [replayList, setReplayList] = useState([]);
   const [isLoadingReplays, setIsLoadingReplays] = useState(false);
@@ -640,6 +644,17 @@ export default function MenuScreen() {
                   <div className="text-xs text-pink-200 opacity-70">{t('workshop_desc') || '浏览创意工坊'}</div>
                 </div>
               </button>
+
+              <button
+                onClick={() => setShowWatchMode(true)}
+                className="flex items-center gap-4 px-6 py-5 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl text-left hover:scale-[1.02] transition-all shadow-lg hover:shadow-indigo-500/30"
+              >
+                <span className="text-3xl">👁️</span>
+                <div>
+                  <div className="text-lg font-bold">{t('ai_watch_mode') || 'AI观战模式'}</div>
+                  <div className="text-xs text-indigo-200 opacity-70">{t('ai_watch_desc') || '观战AI决策过程'}</div>
+                </div>
+              </button>
             </div>
           )}
 
@@ -730,6 +745,18 @@ export default function MenuScreen() {
           onClose={() => setShowParentDashboard(false)}
         />
       )}
+
+      {/* Watch Mode Modal */}
+      {showWatchMode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="bg-gray-900 rounded-2xl max-w-md w-full max-h-[80vh] overflow-hidden shadow-2xl border border-purple-500/30 p-6">
+            <WatchModePanel onClose={() => setShowWatchMode(false)} />
+          </div>
+        </div>
+      )}
+
+      {/* AI Decision Overlay (always visible in watch mode) */}
+      <AIDecisionOverlay visible={useAIWatchStore.getState().isWatchMode} />
     </div>
   );
 }
