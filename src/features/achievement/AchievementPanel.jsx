@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAchievementStore } from './achievementStore';
 import { ACHIEVEMENTS, getTotalPossiblePoints } from './achievementData';
-import { ACHIEVEMENT_CATEGORIES, ACHIEVEMENT_DIFFICULTY, TASK_CHAPTERS } from './achievementTypes';
+import { ACHIEVEMENT_CATEGORIES, ACHIEVEMENT_DIFFICULTY, ACHIEVEMENT_RARITY, RARITY_LABELS, RARITY_COLORS, TASK_CHAPTERS } from './achievementTypes';
 import { useGameStore } from '../../game/store';
 import { t } from '../../i18n';
 
@@ -28,7 +28,8 @@ export default function AchievementPanel() {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedTab, setSelectedTab] = useState('achievements'); // achievements | tasks | stats
   const [filterCategory, setFilterCategory] = useState('all');
-  const [sortBy, setSortBy] = useState('default'); // default | points | difficulty
+  const [filterRarity, setFilterRarity] = useState('all');
+  const [sortBy, setSortBy] = useState('default'); // default | points | difficulty | rarity
 
   const unlockedAchievements = useAchievementStore(s => s.unlockedAchievements);
   const totalPoints = useAchievementStore(s => s.getTotalEarnedPoints());
@@ -48,12 +49,19 @@ export default function AchievementPanel() {
       filtered = filtered.filter(a => a.category === filterCategory);
     }
 
+    if (filterRarity !== 'all') {
+      filtered = filtered.filter(a => a.rarity === filterRarity);
+    }
+
     // Sort
     if (sortBy === 'points') {
       filtered.sort((a, b) => b.points - a.points);
     } else if (sortBy === 'difficulty') {
       const order = [ACHIEVEMENT_DIFFICULTY.LEGENDARY, ACHIEVEMENT_DIFFICULTY.HARD, ACHIEVEMENT_DIFFICULTY.MEDIUM, ACHIEVEMENT_DIFFICULTY.EASY];
       filtered.sort((a, b) => order.indexOf(a.difficulty) - order.indexOf(b.difficulty));
+    } else if (sortBy === 'rarity') {
+      const order = ['legendary', 'epic', 'rare', 'uncommon', 'common'];
+      filtered.sort((a, b) => order.indexOf(a.rarity) - order.indexOf(b.rarity));
     }
 
     return filtered;
@@ -179,6 +187,19 @@ export default function AchievementPanel() {
                       <option value="default">默认排序</option>
                       <option value="points">按积分</option>
                       <option value="difficulty">按难度</option>
+                      <option value="rarity">按稀有度</option>
+                    </select>
+                    <select
+                      value={filterRarity}
+                      onChange={(e) => setFilterRarity(e.target.value)}
+                      className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm"
+                    >
+                      <option value="all">全部稀有度</option>
+                      <option value="common">普通</option>
+                      <option value="uncommon">稀有</option>
+                      <option value="rare">罕见</option>
+                      <option value="epic">史诗</option>
+                      <option value="legendary">传说</option>
                     </select>
                   </div>
 
@@ -206,6 +227,9 @@ export default function AchievementPanel() {
                                 <h4 className={`font-bold ${isUnlocked ? 'text-white' : 'text-gray-400'}`}>
                                   {achievement.secret && !isUnlocked ? '???' : achievement.name}
                                 </h4>
+                                {achievement.limitedTime && (
+                                  <span className="text-xs px-1.5 py-0.5 bg-orange-500/30 text-orange-300 rounded">限时</span>
+                                )}
                               </div>
                               <p className="text-xs text-gray-400 mt-1 line-clamp-2">
                                 {achievement.secret && !isUnlocked
@@ -213,9 +237,16 @@ export default function AchievementPanel() {
                                   : achievement.description}
                               </p>
                               <div className="flex items-center justify-between mt-2">
-                                <span className={`text-xs ${difficulty.color}`}>
-                                  {'★'.repeat(difficulty.stars)}{'☆'.repeat(4 - difficulty.stars)}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-xs ${difficulty.color}`}>
+                                    {'★'.repeat(difficulty.stars)}{'☆'.repeat(4 - difficulty.stars)}
+                                  </span>
+                                  {achievement.rarity && (
+                                    <span className={`text-xs px-1.5 py-0.5 rounded border ${RARITY_COLORS[achievement.rarity] || 'text-gray-400 border-gray-500'}`}>
+                                      {RARITY_LABELS[achievement.rarity] || achievement.rarity}
+                                    </span>
+                                  )}
+                                </div>
                                 <span className={`text-sm font-bold ${isUnlocked ? 'text-yellow-400' : 'text-gray-500'}`}>
                                   +{achievement.points}
                                 </span>

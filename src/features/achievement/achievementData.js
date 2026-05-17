@@ -1,4 +1,4 @@
-import { ACHIEVEMENT_CATEGORIES, ACHIEVEMENT_DIFFICULTY, WEATHER_TYPES } from './achievementTypes';
+import { ACHIEVEMENT_CATEGORIES, ACHIEVEMENT_DIFFICULTY, ACHIEVEMENT_RARITY, WEATHER_TYPES } from './achievementTypes';
 import { createAchievement } from './achievementTypes';
 
 // All achievements in the game
@@ -12,6 +12,7 @@ export const ACHIEVEMENTS = [
     category: ACHIEVEMENT_CATEGORIES.GAMEPLAY,
     difficulty: ACHIEVEMENT_DIFFICULTY.EASY,
     points: 10,
+    rarity: ACHIEVEMENT_RARITY.COMMON,
     condition: (state) => (state.profile?.gamesPlayed || 0) >= 1,
   }),
   createAchievement({
@@ -22,6 +23,7 @@ export const ACHIEVEMENTS = [
     category: ACHIEVEMENT_CATEGORIES.GAMEPLAY,
     difficulty: ACHIEVEMENT_DIFFICULTY.MEDIUM,
     points: 30,
+    rarity: ACHIEVEMENT_RARITY.UNCOMMON,
     condition: (state) => (state.profile?.wins || 0) >= 1,
   }),
   createAchievement({
@@ -32,6 +34,7 @@ export const ACHIEVEMENTS = [
     category: ACHIEVEMENT_CATEGORIES.GAMEPLAY,
     difficulty: ACHIEVEMENT_DIFFICULTY.EASY,
     points: 10,
+    rarity: ACHIEVEMENT_RARITY.COMMON,
     condition: (state) => (state.profile?.propertiesBought || 0) >= 1,
   }),
   createAchievement({
@@ -42,6 +45,7 @@ export const ACHIEVEMENTS = [
     category: ACHIEVEMENT_CATEGORIES.GAMEPLAY,
     difficulty: ACHIEVEMENT_DIFFICULTY.MEDIUM,
     points: 40,
+    rarity: ACHIEVEMENT_RARITY.UNCOMMON,
     condition: (state) => (state.profile?.maxProperties || 0) >= 5,
   }),
   createAchievement({

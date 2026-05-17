@@ -15,11 +15,45 @@ export const ACHIEVEMENT_DIFFICULTY = {
   LEGENDARY: 'legendary', // 150+ points
 };
 
+// Achievement rarity (drop rate / exclusivity)
+export const ACHIEVEMENT_RARITY = {
+  COMMON: 'common',       // 50% - easy to get
+  UNCOMMON: 'uncommon',   // 30% - moderate
+  RARE: 'rare',           // 15% - challenging
+  EPIC: 'epic',           // 4% - very challenging
+  LEGENDARY: 'legendary', // 1% - extremely rare
+};
+
+export const RARITY_LABELS = {
+  [ACHIEVEMENT_RARITY.COMMON]: '普通',
+  [ACHIEVEMENT_RARITY.UNCOMMON]: '稀有',
+  [ACHIEVEMENT_RARITY.RARE]: '罕见',
+  [ACHIEVEMENT_RARITY.EPIC]: '史诗',
+  [ACHIEVEMENT_RARITY.LEGENDARY]: '传说',
+};
+
+export const RARITY_COLORS = {
+  [ACHIEVEMENT_RARITY.COMMON]: 'text-gray-400 border-gray-500',
+  [ACHIEVEMENT_RARITY.UNCOMMON]: 'text-green-400 border-green-500',
+  [ACHIEVEMENT_RARITY.RARE]: 'text-blue-400 border-blue-500',
+  [ACHIEVEMENT_RARITY.EPIC]: 'text-purple-400 border-purple-500',
+  [ACHIEVEMENT_RARITY.LEGENDARY]: 'text-yellow-400 border-yellow-500',
+};
+
+export const RARITY_BG_COLORS = {
+  [ACHIEVEMENT_RARITY.COMMON]: 'from-gray-500/20 to-gray-600/20',
+  [ACHIEVEMENT_RARITY.UNCOMMON]: 'from-green-500/20 to-green-600/20',
+  [ACHIEVEMENT_RARITY.RARE]: 'from-blue-500/20 to-blue-600/20',
+  [ACHIEVEMENT_RARITY.EPIC]: 'from-purple-500/20 to-purple-600/20',
+  [ACHIEVEMENT_RARITY.LEGENDARY]: 'from-yellow-500/20 to-orange-600/20',
+};
+
 // Achievement status
 export const ACHIEVEMENT_STATUS = {
   LOCKED: 'locked',
   UNLOCKED: 'unlocked',
   IN_PROGRESS: 'in_progress',
+  EXPIRED: 'expired', // For limited-time achievements
 };
 
 // Task chapter structure
@@ -93,6 +127,9 @@ export const createAchievement = ({
   condition,
   secret = false,
   tier = 'kindergarten',
+  rarity = ACHIEVEMENT_RARITY.COMMON,
+  limitedTime = false,
+  expiresAt = null,
 }) => ({
   id,
   name,
@@ -104,7 +141,16 @@ export const createAchievement = ({
   condition,
   secret,
   tier,
+  rarity,
+  limitedTime,
+  expiresAt,
   unlockedAt: null,
   progress: 0,
   target: 1,
 });
+
+// Check if a limited-time achievement has expired
+export const isAchievementExpired = (achievement) => {
+  if (!achievement.limitedTime || !achievement.expiresAt) return false;
+  return Date.now() > achievement.expiresAt;
+};
