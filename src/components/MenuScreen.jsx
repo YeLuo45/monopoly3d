@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useGameStore } from '../game/store';
 import { useMultiplayerStore } from '../multiplayer/multiplayerStore';
+import { getLocalReplays } from '../multiplayer/ReplaySystem';
+import ReplayList from '../multiplayer/ReplayList';
 import { AchievementPanel, useAchievementStore } from '../features/achievement';
 import { OnlineLobby } from '../multiplayer';
 import { LOCALES, getLocale, setLocale, getLocaleName, t } from '../i18n';
@@ -682,71 +684,12 @@ export default function MenuScreen() {
         <AchievementPanel onClose={() => setShowAchievementPanel(false)} />
       )}
 
-      {/* Replay List Modal */}
+{/* Replay List Modal using ReplayList component */}
       {showReplayList && (
-        <div className="flex flex-col items-center justify-center h-screen text-white">
-          <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-3xl p-8 max-w-2xl w-full mx-4 border border-purple-500/30 max-h-[80vh] flex flex-col">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="text-center flex-1">
-                <div className="text-4xl mb-2">📹</div>
-                <h2 className="text-xl font-bold">{t('game_replay')}</h2>
-              </div>
-              <button
-                onClick={handleCloseReplayList}
-                className="text-gray-400 hover:text-white text-2xl"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Replay List */}
-            <div className="flex-1 overflow-y-auto">
-              {isLoadingReplays ? (
-                <div className="text-center text-gray-400 py-8">
-                  {t('loading')}
-                </div>
-              ) : replayList.length === 0 ? (
-                <div className="text-center text-gray-400 py-8">
-                  <div className="text-4xl mb-2">📭</div>
-                  <p>{t('no_replays')}</p>
-                  <p className="text-sm mt-1">{t('replay_hint')}</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {replayList.map((replay) => (
-                    <div
-                      key={replay.id}
-                      className="bg-black/30 rounded-xl p-4 border border-purple-500/30 hover:border-purple-400/50 transition-all"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-yellow-400 font-bold tracking-wider">
-                              {replay.room_code}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {new Date(replay.recorded_at).toLocaleDateString()}
-                            </span>
-                          </div>
-                          <div className="text-xs text-gray-400 mt-1">
-                            {t('duration')} {Math.round(replay.duration / 1000)}{t('events_count')} · {replay.event_count} {t('events_count')}
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => handleLoadReplay(replay)}
-                          className="text-xs px-3 py-1 bg-purple-500/50 hover:bg-purple-500 rounded-lg"
-                        >
-                          ▶️ {t('play')}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <ReplayList
+          onSelectReplay={handleLoadReplay}
+          onClose={handleCloseReplayList}
+        />
       )}
     </div>
   );
