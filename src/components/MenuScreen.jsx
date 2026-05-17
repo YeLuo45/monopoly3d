@@ -13,6 +13,7 @@ import Leaderboard from '../features/leaderboard/Leaderboard';
 import { OnlineLobby } from '../multiplayer';
 import SeasonPass from '../features/season/SeasonPass';
 import SeasonChallenges from '../features/season/SeasonChallenges';
+import AchievementShowcase from '../features/achievement/AchievementShowcase';
 import { LOCALES, getLocale, setLocale, getLocaleName, t } from '../i18n';
 
 function LanguageSelector() {
@@ -787,6 +788,9 @@ export default function MenuScreen() {
 
       {/* Season Challenges */}
       <SeasonChallenges />
+
+      {/* Achievement Showcase */}
+      <AchievementShowcase />
     </div>
   );
 }
