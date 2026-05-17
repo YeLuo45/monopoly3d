@@ -3,6 +3,7 @@ import { useGameStore } from '../game/store';
 import { useMultiplayerStore } from '../multiplayer/multiplayerStore';
 import { getLocalReplays } from '../multiplayer/ReplaySystem';
 import ReplayList from '../multiplayer/ReplayList';
+import ShopScreen from '../features/shop/ShopScreen';
 import { AchievementPanel, useAchievementStore } from '../features/achievement';
 import { OnlineLobby } from '../multiplayer';
 import { LOCALES, getLocale, setLocale, getLocaleName, t } from '../i18n';
@@ -69,6 +70,7 @@ export default function MenuScreen() {
   const [playerCount, setPlayerCount] = useState(1);
 
   const [showReplayList, setShowReplayList] = useState(false);
+  const [showShop, setShowShop] = useState(false);
   const [activeTab, setActiveTab] = useState('game');
   const [replayList, setReplayList] = useState([]);
   const [isLoadingReplays, setIsLoadingReplays] = useState(false);
@@ -587,6 +589,17 @@ export default function MenuScreen() {
                   <div className="text-xs text-purple-200 opacity-70">{t('view_replays_desc') || '观看历史回放'}</div>
                 </div>
               </button>
+
+              <button
+                onClick={() => setShowShop(true)}
+                className="flex items-center gap-4 px-6 py-5 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-2xl text-left hover:scale-[1.02] transition-all shadow-lg hover:shadow-yellow-500/30"
+              >
+                <span className="text-3xl">🎪</span>
+                <div>
+                  <div className="text-lg font-bold">{t('shop') || '游戏商城'}</div>
+                  <div className="text-xs text-yellow-200 opacity-70">{t('shop_desc') || '购买皮肤和道具'}</div>
+                </div>
+              </button>
             </div>
           )}
 
@@ -690,6 +703,11 @@ export default function MenuScreen() {
           onSelectReplay={handleLoadReplay}
           onClose={handleCloseReplayList}
         />
+      )}
+
+      {/* Shop Modal */}
+      {showShop && (
+        <ShopScreen onClose={() => setShowShop(false)} />
       )}
     </div>
   );
