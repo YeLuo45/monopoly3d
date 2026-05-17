@@ -14,12 +14,46 @@ export const AI_DIFFICULTY = {
   ADAPTIVE: 'adaptive',  // Self-evolving AI based on player performance
 };
 
+// AI Personality types (inspired by TradingAgents multi-role architecture)
+export const AI_PERSONALITY = {
+  AGGRESSIVE: 'aggressive',    // Analyst-type: focuses on high-ROI property acquisition
+  CONSERVATIVE: 'conservative', // Risk-avoiding: prioritizes safety fund and monopoly completion
+  BALANCED: 'balanced',         // Balanced: considers both growth and safety
+};
+
+const PERSONALITY_LABELS = {
+  [AI_PERSONALITY.AGGRESSIVE]: '激进型',
+  [AI_PERSONALITY.CONSERVATIVE]: '保守型',
+  [AI_PERSONALITY.BALANCED]: '均衡型',
+};
+
+// AI personality-specific name pools (each personality has distinct character names)
+const PERSONALITY_NAMES = {
+  [AI_PERSONALITY.AGGRESSIVE]: ['小钢炮', '铁头娃', '冲锋兵', '敢死队', '抢地主'],
+  [AI_PERSONALITY.CONSERVATIVE]: ['老财神', '守财奴', '精算师', '稳妥侠', '保险箱'],
+  [AI_PERSONALITY.BALANCED]: ['小智多星', '全能手', '和事佬', '理财通', '策略家'],
+};
+
 const DIFFICULTY_LABELS = {
   [AI_DIFFICULTY.EASY]: '简单',
   [AI_DIFFICULTY.NORMAL]: '普通',
   [AI_DIFFICULTY.HARD]: '困难',
   [AI_DIFFICULTY.ADAPTIVE]: '自适应',
 };
+
+// Default personalities assigned when creating AI players
+const DEFAULT_PERSONALITIES = [
+  AI_PERSONALITY.AGGRESSIVE,
+  AI_PERSONALITY.CONSERVATIVE,
+  AI_PERSONALITY.BALANCED,
+  AI_PERSONALITY.BALANCED,
+];
+
+export const getPersonalityLabel = (personality) => PERSONALITY_LABELS[personality] || PERSONALITY_LABELS[AI_PERSONALITY.BALANCED];
+
+export const getPersonalityNames = (personality) => PERSONALITY_NAMES[personality] || PERSONALITY_NAMES[AI_PERSONALITY.BALANCED];
+
+export const getDefaultPersonality = (index) => DEFAULT_PERSONALITIES[index % DEFAULT_PERSONALITIES.length];
 
 export const DIFFICULTY_NOISE = {
   [AI_DIFFICULTY.EASY]: 0.5,    // 50% random noise
@@ -526,83 +560,131 @@ function calculateTrafficScore(tile) {
 }
 
 /**
+ * Get personality-based scoring modifiers
+ * Inspired by TradingAgents multi-analyst roles: each "analyst" specializes
+ */
+function getPersonalityModifiers(personality) {
+  switch (personality) {
+    case AI_PERSONALITY.AGGRESSIVE:
+      // Aggressive analyst: prioritizes high-ROI and traffic, ignores safety
+      return {
+        safetyPenalty: 0.2,      // Minimal safety penalty
+        roiWeight: 2.0,           // Heavy ROI weighting
+        trafficWeight: 3.0,       // Prioritize high-traffic tiles
+        monopolyBonus: 1.0,        // Less focused on monopoly
+        groupCompletionWeight: 0.5,
+        highPriceBonus: 1.5,      // Prefers expensive properties
+      };
+    case AI_PERSONALITY.CONSERVATIVE:
+      // Conservative analyst: prioritizes complete groups and safety, ignores ROI
+      return {
+        safetyPenalty: 1.0,       // Full safety penalty
+        roiWeight: 0.3,           // Ignore fast payback
+        trafficWeight: 0.5,       // Ignore traffic
+        monopolyBonus: 2.0,      // Strong monopoly focus
+        groupCompletionWeight: 2.0,
+        highPriceBonus: 0.5,      // Avoids overpriced tiles
+      };
+    case AI_PERSONALITY.BALANCED:
+    default:
+      // Balanced analyst: equal consideration of all factors
+      return {
+        safetyPenalty: 0.5,
+        roiWeight: 1.0,
+        trafficWeight: 2.0,
+        monopolyBonus: 1.0,
+        groupCompletionWeight: 1.0,
+        highPriceBonus: 1.0,
+      };
+  }
+}
+
+/**
  * Score a property purchase decision
  * Higher score = more desirable to purchase
- * 
+ *
  * @param {Object} tile - The property tile to score
  * @param {Object} player - The AI player
  * @param {Object} state - Full game state
  * @param {string} difficulty - AI difficulty level
+ * @param {string} personality - AI personality type
  * @returns {number} Score for purchasing this property
  */
-export function scorePropertyPurchase(tile, player, state, difficulty = AI_DIFFICULTY.NORMAL) {
+export function scorePropertyPurchase(tile, player, state, difficulty = AI_DIFFICULTY.NORMAL, personality = AI_PERSONALITY.BALANCED) {
   if (!tile || tile.type !== 'property' || tile.owner !== null) {
     return -Infinity;
   }
-  
+
+  const mods = getPersonalityModifiers(personality);
   let score = 0;
   const groupTiles = getColorGroupTiles(tile);
-  
-  // 1. FUND SAFETY: Penalty if purchase leaves insufficient funds
+
+  // 1. FUND SAFETY: Penalty if purchase leaves insufficient funds (personality-adjusted)
   const remainingCash = player.money - tile.price;
   if (remainingCash < 0) {
     return -Infinity; // Can't afford
   }
   if (remainingCash < SAFETY_FUND) {
-    score -= (SAFETY_FUND - remainingCash) * 0.5; // Risk penalty
+    score -= (SAFETY_FUND - remainingCash) * 0.5 * mods.safetyPenalty; // Risk penalty
   }
-  
-  // 2. COLOR GROUP COMPLETION BONUS
+
+  // 2. COLOR GROUP COMPLETION BONUS (personality-adjusted)
   const ownedInGroup = countOwnedInGroup(player.id, groupTiles);
   const totalInGroup = groupTiles.length + 1; // +1 for the tile being purchased
-  
+
   // Only 1 tile away from complete group = huge bonus
   if (ownedInGroup === totalInGroup - 1) {
-    score += 50;
+    score += 50 * mods.groupCompletionWeight;
   } else if (ownedInGroup > 0) {
-    score += 20 * ownedInGroup;
+    score += 20 * ownedInGroup * mods.groupCompletionWeight;
   }
-  
-  // 3. ROI CALCULATION: Estimate payback turns
+
+  // 3. ROI CALCULATION: Estimate payback turns (personality-adjusted)
   if (tile.type === 'property' && tile.rent && tile.rent.length > 0) {
     const baseRent = tile.rent[0];
     const avgRent = baseRent * 0.3; // Assume 30% chance someone lands
-    
+
     if (avgRent > 0) {
       const paybackTurns = tile.price / avgRent;
       // Faster payback = better investment
-      score += Math.max(0, 25 - paybackTurns);
+      score += Math.max(0, 25 - paybackTurns) * mods.roiWeight;
     }
   }
-  
-  // 4. TRAFFIC VALUE: Properties in high-traffic areas
-  score += calculateTrafficScore(tile) * 2;
-  
-  // 5. ALREADY COMPLETE GROUP: If player owns full group, monopoly is very valuable
+
+  // 4. TRAFFIC VALUE: Properties in high-traffic areas (personality-adjusted)
+  score += calculateTrafficScore(tile) * mods.trafficWeight;
+
+  // 5. ALREADY COMPLETE GROUP: If player owns full group, monopoly is very valuable (personality-adjusted)
   if (isColorGroupComplete(player.id, groupTiles)) {
-    score += 30;
+    score += 30 * mods.monopolyBonus;
   }
-  
+
+  // 6. HIGH-PRICE TILE BONUS (aggressive personalities prefer expensive tiles)
+  if (tile.price > 150) {
+    score += (tile.price - 150) * 0.1 * mods.highPriceBonus;
+  }
+
   // Apply difficulty-based noise (using adaptive noise from store)
   const noise = useAIBrainStore.getState().getAdaptiveNoise(difficulty);
   if (noise > 0) {
     const noiseFactor = 1 + (Math.random() - 0.5) * noise * 2;
     score *= noiseFactor;
   }
-  
+
   return score;
 }
 
 /**
  * Score a house building decision on a specific property
- * 
+ *
  * @param {Object} tile - The property tile to build on
  * @param {Object} player - The AI player
  * @param {Object} state - Full game state
  * @param {string} difficulty - AI difficulty level
+ * @param {string} personality - AI personality type
  * @returns {number} Score for building a house on this property
  */
-export function scoreBuildHouse(tile, player, state, difficulty = AI_DIFFICULTY.NORMAL) {
+export function scoreBuildHouse(tile, player, state, difficulty = AI_DIFFICULTY.NORMAL, personality = AI_PERSONALITY.BALANCED) {
   if (!tile || tile.type !== 'property') {
     return -Infinity;
   }
@@ -627,33 +709,39 @@ export function scoreBuildHouse(tile, player, state, difficulty = AI_DIFFICULTY.
     return -Infinity;
   }
   
+  const mods = getPersonalityModifiers(personality);
   let score = 0;
   const groupTiles = getColorGroupTiles(tile);
-  
-  // 1. FULL COLOR GROUP PRIORITY: Buildings on complete groups are much more valuable
+
+  // Safety fund check (personality-adjusted)
+  if (player.money - HOUSE_COST < SAFETY_FUND * mods.safetyPenalty) {
+    return -Infinity;
+  }
+
+  // 1. FULL COLOR GROUP PRIORITY: Buildings on complete groups are much more valuable (personality-adjusted)
   if (isColorGroupComplete(player.id, groupTiles)) {
-    score += 40;
+    score += 40 * mods.monopolyBonus;
   } else {
     // Only build if at least 2 of the group are owned
     const ownedInGroup = countOwnedInGroup(player.id, groupTiles);
     if (ownedInGroup < 2) {
       return -Infinity; // Not worth building without monopoly potential
     }
-    score += 15 * ownedInGroup;
+    score += 15 * ownedInGroup * mods.groupCompletionWeight;
   }
-  
-  // 2. HIGH-TRAFFIC TILES: Buildings on high-traffic areas pay off faster
-  score += calculateTrafficScore(tile) * 3;
-  
-  // 3. ROI CALCULATION: Buildings on expensive properties have better ROI
+
+  // 2. HIGH-TRAFFIC TILES: Buildings in high-traffic areas pay off faster (personality-adjusted)
+  score += calculateTrafficScore(tile) * mods.trafficWeight;
+
+  // 3. ROI CALCULATION: Buildings on expensive properties have better ROI (personality-adjusted)
   if (tile.rent && tile.rent.length > 0) {
     const currentRent = tile.rent[Math.min(tile.houses, 4)];
     const nextRent = tile.rent[Math.min(tile.houses + 1, 4)];
     const rentIncrease = nextRent - currentRent;
-    
+
     if (rentIncrease > 0) {
       const paybackTurns = HOUSE_COST / (rentIncrease * 0.3);
-      score += Math.max(0, 30 - paybackTurns);
+      score += Math.max(0, 30 - paybackTurns) * mods.roiWeight;
     }
   }
   
@@ -686,7 +774,7 @@ export function chooseAIAction(state, playerIndex, difficulty = AI_DIFFICULTY.NO
   
   // 1. EVALUATE PROPERTY PURCHASE
   if (currentTile && currentTile.type === 'property' && currentTile.owner === null) {
-    const buyScore = scorePropertyPurchase(currentTile, player, state, difficulty);
+    const buyScore = scorePropertyPurchase(currentTile, player, state, difficulty, personality);
     
     // Determine if AI should buy based on difficulty
     const buyThreshold = difficulty === AI_DIFFICULTY.EASY ? -20 :
@@ -722,7 +810,7 @@ export function chooseAIAction(state, playerIndex, difficulty = AI_DIFFICULTY.NO
     let bestTileId = null;
     
     for (const tile of buildableProperties) {
-      const buildScore = scoreBuildHouse(tile, player, state, difficulty);
+      const buildScore = scoreBuildHouse(tile, player, state, difficulty, personality);
       if (buildScore > bestBuildScore) {
         bestBuildScore = buildScore;
         bestTileId = tile.id;

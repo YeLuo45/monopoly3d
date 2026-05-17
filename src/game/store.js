@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { BOARD_CONFIG, BOARD_SIZE, STARTING_MONEY, MAX_ROUNDS, QUESTION_TILE_IDS, TILE_TYPES } from './boardConfig';
 import { rollDice, getDiceResult } from './dice';
-import { AI_DIFFICULTY, chooseAIAction, getAdaptiveDifficulty } from './aiBrain';
+import { AI_DIFFICULTY, AI_PERSONALITY, getDefaultPersonality, getPersonalityNames, chooseAIAction, getAdaptiveDifficulty } from './aiBrain';
 import { THEMES } from './themes';
 
 // Achievement System Integration
@@ -28,11 +28,12 @@ const PLAYER_COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'];
 const AI_NAMES = ['小智', '小慧', '小能'];
 const PIECE_NAMES = ['小汽车', '小狗狗', '小猫咪', '陀螺', '奥特曼', '皮卡丘', '哆啦A梦'];
 
-function createPlayer(id, name, isAI = false, color = null) {
+function createPlayer(id, name, isAI = false, color = null, personality = null) {
   return {
     id,
     name,
     isAI,
+    personality, // AI personality type (aggressive/conservative/balanced)
     color: color || PLAYER_COLORS[id % 4],
     money: STARTING_MONEY,
     position: 0,
@@ -66,6 +67,7 @@ const initialState = {
   humanCount: 2,
   aiCount: 0,
   aiDifficulties: [], // array of AI difficulty levels per AI
+  aiPersonalities: [], // array of AI personality types per AI
 
   // Players
   players: [],
@@ -527,13 +529,17 @@ export const useGameStore = create((set, get) => ({
 
   setAgeTier: (tier) => set({ ageTier: tier }),
 
-  setPlayers: (humanCount, aiCount, aiDifficulties = []) => {
+  setPlayers: (humanCount, aiCount, aiDifficulties = [], aiPersonalities = []) => {
     // Default difficulties to 'normal' if not provided
-    const difficulties = aiDifficulties.length === aiCount 
-      ? aiDifficulties 
+    const difficulties = aiDifficulties.length === aiCount
+      ? aiDifficulties
       : Array(aiCount).fill(AI_DIFFICULTY.NORMAL);
+    // Default personalities to auto-assigned based on index
+    const personalities = aiPersonalities.length === aiCount
+      ? aiPersonalities
+      : Array.from({ length: aiCount }, (_, i) => getDefaultPersonality(i));
     // Transition to piece selection screen
-    set({ humanCount, aiCount, aiDifficulties: difficulties, screen: 'piece_selection' });
+    set({ humanCount, aiCount, aiDifficulties: difficulties, aiPersonalities: personalities, screen: 'piece_selection' });
   },
 
   setAIDifficulty: (aiIndex, difficulty) => set(s => {
@@ -556,7 +562,10 @@ export const useGameStore = create((set, get) => ({
     for (let i = 0; i < state.aiCount; i++) {
       const globalIdx = state.humanCount + i;
       const colorIdx = pieceMap[globalIdx] !== undefined ? pieceMap[globalIdx] : globalIdx;
-      players.push(createPlayer(globalIdx, AI_NAMES[i], true, PLAYER_COLORS[colorIdx % 4]));
+      const personality = state.aiPersonalities[i] || getDefaultPersonality(i);
+      const aiNames = getPersonalityNames(personality);
+      const aiName = aiNames[i % aiNames.length];
+      players.push(createPlayer(globalIdx, aiName, true, PLAYER_COLORS[colorIdx % 4], personality));
     }
     // Start tracking game stats
     get().startGameStats();
@@ -1086,7 +1095,7 @@ toggleTeacherMode: () => set(s => ({ teacherMode: !s.teacherMode })),
         const currentPlayer = currentState.players[currentState.currentPlayerIndex];
         const currentTile = BOARD_CONFIG[currentPlayer.position];
         
-        const action = chooseAIAction(get(), currentState.currentPlayerIndex, difficulty);
+        const action = chooseAIAction(get(), currentState.currentPlayerIndex, difficulty, currentPlayer.personality);
         
         // Record AI decision for learning
         get().recordDecision('buy', {

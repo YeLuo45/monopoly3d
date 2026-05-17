@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useGameStore } from '../game/store';
-import { AI_DIFFICULTY, getAdaptiveAIStatus } from '../game/aiBrain';
+import { AI_DIFFICULTY, getAdaptiveAIStatus, AI_PERSONALITY, getPersonalityLabel } from '../game/aiBrain';
 import { THEMES, BOARD_THEMES } from '../game/themes';
 import { t } from '../i18n';
 
@@ -36,24 +36,8 @@ export default function SetupScreen() {
   const [humanCount, setHumanCount] = useState(1);
   const [aiCount, setAiCount] = useState(1);
   const [aiDifficulties, setAiDifficulties] = useState([AI_DIFFICULTY.NORMAL]);
+  const [aiPersonalities, setAiPersonalities] = useState([AI_PERSONALITY.BALANCED]);
   const [adaptiveStatus, setAdaptiveStatus] = useState(null);
-
-  // Load adaptive AI status on mount
-  useEffect(() => {
-    const status = getAdaptiveAIStatus();
-    setAdaptiveStatus(status);
-  }, []);
-
-  // Update AI difficulties when aiCount changes
-  const handleAiCountChange = (newCount) => {
-    setAiCount(newCount);
-    // Extend or truncate difficulties array
-    const newDifficulties = [...aiDifficulties];
-    while (newDifficulties.length < newCount) {
-      newDifficulties.push(AI_DIFFICULTY.NORMAL);
-    }
-    setAiDifficulties(newDifficulties.slice(0, newCount));
-  };
 
   // Update individual AI difficulty
   const handleDifficultyChange = (aiIndex, difficulty) => {
@@ -62,12 +46,42 @@ export default function SetupScreen() {
     setAiDifficulties(newDifficulties);
   };
 
+  // Update individual AI personality
+  const handlePersonalityChange = (aiIndex, personality) => {
+    const newPersonalities = [...aiPersonalities];
+    newPersonalities[aiIndex] = personality;
+    setAiPersonalities(newPersonalities);
+  };
+
+  // Extend or truncate personalities array when aiCount changes
+  const handleAiCountChange = (newCount) => {
+    setAiCount(newCount);
+    // Extend or truncate difficulties array
+    const newDifficulties = [...aiDifficulties];
+    while (newDifficulties.length < newCount) {
+      newDifficulties.push(AI_DIFFICULTY.NORMAL);
+    }
+    setAiDifficulties(newDifficulties.slice(0, newCount));
+    // Extend or truncate personalities array
+    const newPersonalities = [...aiPersonalities];
+    while (newPersonalities.length < newCount) {
+      newPersonalities.push(AI_PERSONALITY.BALANCED);
+    }
+    setAiPersonalities(newPersonalities.slice(0, newCount));
+  };
+
+  // Load adaptive AI status on mount
+  useEffect(() => {
+    const status = getAdaptiveAIStatus();
+    setAdaptiveStatus(status);
+  }, []);
+
   const handleStart = () => {
     if (humanCount + aiCount < 2) {
       alert(t('min_players_alert'));
       return;
     }
-    setPlayers(humanCount, aiCount, aiDifficulties);
+    setPlayers(humanCount, aiCount, aiDifficulties, aiPersonalities);
   };
 
   return (
@@ -178,6 +192,46 @@ export default function SetupScreen() {
                       onClick={() => handleDifficultyChange(i, opt.key)}
                       className={`px-3 py-1 rounded-lg text-sm font-bold transition-all ${
                         aiDifficulties[i] === opt.key
+                          ? `${opt.color} text-white ring-2 ring-white/50`
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* AI Personality Selection */}
+      {aiCount > 0 && (
+        <div className="mb-8 w-96">
+          <h3 className="text-xl mb-4 text-orange-200">{t('ai_personality_settings') || 'AI性格'}</h3>
+          <div className="bg-gray-800/50 rounded-xl p-4 space-y-3">
+            {Array.from({ length: aiCount }, (_, i) => (
+              <div key={i} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-white">🤖 AI {i + 1}</span>
+                  <span className="text-sm text-orange-300">
+                    {aiPersonalities[i] === AI_PERSONALITY.AGGRESSIVE ? '⚔️' :
+                     aiPersonalities[i] === AI_PERSONALITY.CONSERVATIVE ? '🛡️' : '⚖️'}
+                    {getPersonalityLabel(aiPersonalities[i])}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  {[
+                    { key: AI_PERSONALITY.AGGRESSIVE, label: '⚔️ 激进', color: 'bg-red-600' },
+                    { key: AI_PERSONALITY.CONSERVATIVE, label: '🛡️ 保守', color: 'bg-blue-600' },
+                    { key: AI_PERSONALITY.BALANCED, label: '⚖️ 均衡', color: 'bg-green-600' },
+                  ].map(opt => (
+                    <button
+                      key={opt.key}
+                      onClick={() => handlePersonalityChange(i, opt.key)}
+                      className={`px-3 py-1 rounded-lg text-sm font-bold transition-all ${
+                        aiPersonalities[i] === opt.key
                           ? `${opt.color} text-white ring-2 ring-white/50`
                           : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                       }`}
