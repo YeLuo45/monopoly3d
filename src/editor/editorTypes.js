@@ -77,7 +77,85 @@ export const BOARD_SIZES = {
   24: { label: '6×4 (24格)', tiles: 24, sides: 4, tilesPerSide: 6 },
   36: { label: '9×4 (36格)', tiles: 36, sides: 4, tilesPerSide: 9 },
   48: { label: '12×4 (48格)', tiles: 48, sides: 4, tilesPerSide: 12 },
+  64: { label: '16×4 (64格)', tiles: 64, sides: 4, tilesPerSide: 16 },
 };
+
+// Property color groups for visual consistency
+export const PROPERTY_COLOR_GROUPS = [
+  { id: 'brown', label: '棕色', color: '#8B4513', tileCount: 2 },
+  { id: 'lightBlue', label: '浅蓝', color: '#87CEEB', tileCount: 3 },
+  { id: 'pink', label: '粉色', color: '#FF69B4', tileCount: 3 },
+  { id: 'orange', label: '橙色', color: '#FF8C00', tileCount: 3 },
+  { id: 'red', label: '红色', color: '#DC143C', tileCount: 3 },
+  { id: 'yellow', label: '黄色', color: '#FFD700', tileCount: 3 },
+  { id: 'green', label: '绿色', color: '#228B22', tileCount: 3 },
+  { id: 'darkBlue', label: '深蓝', color: '#00008B', tileCount: 2 },
+];
+
+// Tile validation rules
+export const TILE_VALIDATION_RULES = {
+  MIN_TILES: 16,
+  MAX_TILES: 64,
+  REQUIRED_CORNER_TILES: ['GO', 'JAIL', 'FREE_PARKING', 'GO_TO_JAIL'],
+  RECOMMENDED_PROPERTY_COUNT: 8, // At least 8 properties for balanced gameplay
+};
+
+/**
+ * Validate board configuration
+ * @param {Array} tiles - Array of tile objects
+ * @returns {Object} - { valid: boolean, errors: string[], warnings: string[] }
+ */
+export function validateBoardConfig(tiles) {
+  const errors = [];
+  const warnings = [];
+
+  if (!tiles || !Array.isArray(tiles)) {
+    return { valid: false, errors: ['Invalid tiles array'], warnings: [] };
+  }
+
+  // Size checks
+  if (tiles.length < TILE_VALIDATION_RULES.MIN_TILES) {
+    errors.push(`Board must have at least ${TILE_VALIDATION_RULES.MIN_TILES} tiles (current: ${tiles.length})`);
+  }
+  if (tiles.length > TILE_VALIDATION_RULES.MAX_TILES) {
+    errors.push(`Board must have at most ${TILE_VALIDATION_RULES.MAX_TILES} tiles (current: ${tiles.length})`);
+  }
+
+  // Required corners
+  const corners = tiles.filter(t => t.subtype && ['GO', 'JAIL', 'FREE_PARKING', 'GO_TO_JAIL'].includes(t.subtype));
+  const required = ['GO', 'JAIL', 'FREE_PARKING', 'GO_TO_JAIL'];
+  for (const corner of required) {
+    if (!corners.some(c => c.subtype === corner)) {
+      errors.push(`Missing required corner tile: ${corner}`);
+    }
+  }
+
+  // Property count
+  const propertyCount = tiles.filter(t => t.type === TILE_TYPES.PROPERTY).length;
+  if (propertyCount < TILE_VALIDATION_RULES.RECOMMENDED_PROPERTY_COUNT) {
+    warnings.push(`Recommended at least ${TILE_VALIDATION_RULES.RECOMMENDED_PROPERTY_COUNT} properties (current: ${propertyCount})`);
+  }
+
+  // Check for duplicate corner placements
+  const cornerPositions = required.map(r => {
+    const idx = tiles.findIndex(t => t.subtype === r);
+    return { type: r, position: idx };
+  });
+  const seen = new Set();
+  for (const c of cornerPositions) {
+    if (c.position === -1) continue;
+    if (seen.has(c.position)) {
+      errors.push(`Duplicate corner position for ${c.type}`);
+    }
+    seen.add(c.position);
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings,
+  };
+}
 
 export const COLOR_GROUPS = {
   brown: '#8B4513',

@@ -42,9 +42,12 @@ const useEditorStore = create((set, get) => ({
   isPreviewMode: false,
   showGrid: true,
   
-  // Rule configuration
+// Rule configuration
   rules: { ...DEFAULT_RULE_CONFIG },
-  
+
+  // Board visual theme
+  boardTheme: 'classic',
+
   // Preset templates
   templates: PRESET_TEMPLATES,
   
@@ -218,6 +221,11 @@ const useEditorStore = create((set, get) => ({
     set((state) => ({
       rules: { ...state.rules, ...updates },
     }));
+  },
+
+  // Set board theme
+  setBoardTheme: (themeId) => {
+    set({ boardTheme: themeId });
   },
   
   // Import tiles from JSON

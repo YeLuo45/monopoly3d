@@ -92,7 +92,7 @@ function Toolbar({ onSave, onLoad, onExport, onImport }) {
         </button>
       </div>
 
-      {/* View Options */}
+// View Options
       <div className="flex items-center gap-2 border-r border-gray-600 pr-3">
         <button
           onClick={togglePreview}
@@ -106,6 +106,23 @@ function Toolbar({ onSave, onLoad, onExport, onImport }) {
         >
           {t('grid')}
         </button>
+      </div>
+
+      {/* Board Theme Selector */}
+      <div className="flex items-center gap-2 border-r border-gray-600 pr-3">
+        <span className="text-sm text-gray-300">🎨:</span>
+        <select
+          value={useEditorStore.getState().boardTheme}
+          onChange={(e) => useEditorStore.getState().setBoardTheme(e.target.value)}
+          className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm text-white"
+        >
+          <option value="classic">经典</option>
+          <option value="modern">现代</option>
+          <option value="pastel">马卡龙</option>
+          <option value="neon">霓虹</option>
+          <option value="forest">森林</option>
+          <option value="sunset">夕阳</option>
+        </select>
       </div>
 
       {/* File Operations */}
