@@ -303,6 +303,26 @@ export default function OnlineLobby({ onBack, onGameStart }) {
               </div>
             </div>
           )}
+
+          {/* Voice Chat Placeholder */}
+          <div className="bg-black/20 rounded-xl p-4 mb-4">
+            <h3 className="text-sm font-bold text-purple-300 mb-3">🎤 语音聊天</h3>
+            <div className="flex items-center gap-3">
+              <button
+                className="flex-1 px-4 py-2 bg-green-500/30 hover:bg-green-500/50 rounded-lg text-green-200 text-sm transition-colors"
+                onClick={() => alert('语音聊天功能即将上线!')}
+              >
+                🎙️ 加入语音
+              </button>
+              <button
+                className="px-4 py-2 bg-gray-500/30 hover:bg-gray-500/50 rounded-lg text-gray-300 text-sm transition-colors"
+                onClick={() => alert('语音聊天功能即将上线!')}
+              >
+                🔇 静音
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">语音聊天功能开发中，敬请期待</p>
+          </div>
           
           {/* Game starting indicator */}
           {currentRoom?.status === 'playing' && (

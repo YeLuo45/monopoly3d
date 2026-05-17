@@ -17,7 +17,15 @@ export default function RoomBrowser({ onJoin, onBack, onSpectate }) {
     subscribeToRoomList,
     unsubscribeFromRoomList,
     refreshRoomList,
+    roomFilters,
+    setRoomFilters,
+    getFilteredRooms,
   } = useMultiplayerStore();
+
+  // Use filtered rooms if filters are active
+  const displayedRooms = roomFilters.minPlayers > 0 || roomFilters.maxPlayers < 6 || roomFilters.gameMode !== 'all' || roomFilters.status !== 'all' || roomFilters.searchQuery
+    ? getFilteredRooms()
+    : availableRooms;
   
   // Subscribe to room list on mount
   useEffect(() => {
@@ -68,19 +76,49 @@ export default function RoomBrowser({ onJoin, onBack, onSpectate }) {
         </button>
       </div>
       
-      {isLoading ? (
+{isLoading ? (
         <div className="text-center text-gray-400 py-8">
           加载中...
         </div>
-      ) : availableRooms.length === 0 ? (
+      ) : displayedRooms.length === 0 ? (
         <div className="text-center text-gray-400 py-8">
           <div className="text-4xl mb-2">🔍</div>
           <p>暂无房间</p>
           <p className="text-sm mt-1">成为第一个创建房间的人吧!</p>
         </div>
       ) : (
-        <div className="space-y-2 max-h-64 overflow-y-auto">
-          {availableRooms.map((room) => (
+        <div className="space-y-2">
+          {/* Filter bar */}
+          <div className="flex gap-2 mb-3">
+            <input
+              type="text"
+              placeholder="搜索房间..."
+              value={roomFilters.searchQuery}
+              onChange={(e) => setRoomFilters({ searchQuery: e.target.value })}
+              className="flex-1 px-3 py-2 bg-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+            <select
+              value={roomFilters.gameMode}
+              onChange={(e) => setRoomFilters({ gameMode: e.target.value })}
+              className="px-3 py-2 bg-gray-700 rounded-lg text-white text-sm focus:outline-none"
+            >
+              <option value="all">全部模式</option>
+              <option value="classic">经典</option>
+              <option value="speed">速战</option>
+              <option value="custom">自定义</option>
+            </select>
+            <select
+              value={roomFilters.status}
+              onChange={(e) => setRoomFilters({ status: e.target.value })}
+              className="px-3 py-2 bg-gray-700 rounded-lg text-white text-sm focus:outline-none"
+            >
+              <option value="all">全部状态</option>
+              <option value="waiting">等待中</option>
+              <option value="playing">游戏中</option>
+            </select>
+          </div>
+
+          {displayedRooms.map(room => (
             <div
               key={room.id}
               className="bg-black/30 rounded-xl p-3 border border-purple-500/30 hover:border-purple-400/50 transition-all"

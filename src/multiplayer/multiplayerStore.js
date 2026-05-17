@@ -83,6 +83,16 @@ const initialState = {
   playbackEvents: [],
   playbackIndex: 0,
   playbackSpeed: 1,
+
+  // Room browser filters
+  roomFilters: {
+    minPlayers: 0,
+    maxPlayers: 6,
+    gameMode: 'all', // 'all' | 'classic' | 'speed' | 'custom'
+    status: 'all', // 'all' | 'waiting' | 'playing'
+    searchQuery: '',
+  },
+  playerHistory: [], // Recent games played
 };
 
 export const useMultiplayerStore = create((set, get) => ({
@@ -907,6 +917,111 @@ export const useMultiplayerStore = create((set, get) => ({
     } catch (err) {
       console.error('[MultiplayerStore] Refresh room list error:', err);
     }
+  },
+
+  /**
+   * Update room filters
+   */
+  setRoomFilters: (filters) => {
+    set(state => ({
+      roomFilters: { ...state.roomFilters, ...filters },
+    }));
+  },
+
+  /**
+   * Get filtered rooms based on current filters
+   */
+  getFilteredRooms: () => {
+    const { availableRooms, roomFilters } = get();
+    return availableRooms.filter(room => {
+      // Player count filter
+      const playerCount = room.playerCount || 0;
+      if (playerCount < roomFilters.minPlayers) return false;
+      if (roomFilters.maxPlayers < 6 && playerCount >= roomFilters.maxPlayers) return false;
+
+      // Game mode filter
+      if (roomFilters.gameMode !== 'all' && room.game_mode !== roomFilters.gameMode) return false;
+
+      // Status filter
+      if (roomFilters.status !== 'all' && room.status !== roomFilters.status) return false;
+
+      // Search query filter
+      if (roomFilters.searchQuery) {
+        const query = roomFilters.searchQuery.toLowerCase();
+        const matchesName = room.name?.toLowerCase().includes(query);
+        const matchesHost = room.host_name?.toLowerCase().includes(query);
+        if (!matchesName && !matchesHost) return false;
+      }
+
+      return true;
+    });
+  },
+
+  /**
+   * Record game to player history
+   */
+  addToPlayerHistory: (gameRecord) => {
+    const record = {
+      ...gameRecord,
+      playedAt: Date.now(),
+    };
+    set(state => ({
+      playerHistory: [record, ...state.playerHistory.slice(0, 19)], // Keep last 20
+    }));
+    // Persist to localStorage
+    localStorage.setItem('monopoly3d_player_history', JSON.stringify(get().playerHistory));
+  },
+
+  /**
+   * Load player history from localStorage
+   */
+  loadPlayerHistory: () => {
+    try {
+      const saved = localStorage.getItem('monopoly3d_player_history');
+      if (saved) {
+        set({ playerHistory: JSON.parse(saved) });
+      }
+    } catch (e) {
+      console.error('Failed to load player history:', e);
+    }
+  },
+
+  /**
+   * Get player statistics from history
+   */
+  getPlayerStats: () => {
+    const history = get().playerHistory;
+    const totalGames = history.length;
+    const wins = history.filter(g => g.won).length;
+    const totalScore = history.reduce((sum, g) => sum + (g.score || 0), 0);
+    return {
+      totalGames,
+      wins,
+      winRate: totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0,
+      avgScore: totalGames > 0 ? Math.round(totalScore / totalGames) : 0,
+    };
+  },
+
+  /**
+   * Toggle room bookmark/favorite
+   */
+  toggleRoomBookmark: (roomId) => {
+    const bookmarks = JSON.parse(localStorage.getItem('monopoly3d_room_bookmarks') || '[]');
+    const idx = bookmarks.indexOf(roomId);
+    if (idx >= 0) {
+      bookmarks.splice(idx, 1);
+    } else {
+      bookmarks.push(roomId);
+    }
+    localStorage.setItem('monopoly3d_room_bookmarks', JSON.stringify(bookmarks));
+    return bookmarks;
+  },
+
+  /**
+   * Get bookmarked room IDs
+   */
+  getBookmarkedRooms: () => {
+    return JSON.parse(localStorage.getItem('monopoly3d_room_bookmarks') || '[]');
   },
   
   /**
