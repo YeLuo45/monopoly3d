@@ -228,6 +228,28 @@ export default function ReplayList({ onSelectReplay, onClose }) {
             {getEventSummary(replay)}
           </p>
         )}
+
+        {/* Share button */}
+        {replay.roomId && (
+          <button
+            onClick={() => {
+              const shareUrl = `${window.location.origin}?replay=${replay.id}`;
+              if (navigator.share) {
+                navigator.share({
+                  title: 'Monopoly3D 回放',
+                  text: `观看 ${replay.roomId} 的游戏回放`,
+                  url: shareUrl,
+                });
+              } else {
+                navigator.clipboard.writeText(shareUrl);
+                alert('回放链接已复制到剪贴板');
+              }
+            }}
+            className="mt-2 flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300"
+          >
+            🔗 分享回放
+          </button>
+        )}
         
         {/* Replay ID for debugging */}
         <p className="text-xs text-gray-600 mt-2 font-mono truncate">

@@ -18,6 +18,7 @@ import {
   useReplayStore,
 } from './ReplaySystem';
 import { RealtimeChannel, CHANNEL_EVENTS } from './RealtimeChannel';
+import ReplayTimeline from './ReplayTimeline';
 
 /**
  * Format milliseconds to human-readable time
@@ -321,22 +322,14 @@ export default function ReplayPlayer({
           )}
         </div>
         
-        {/* Timeline */}
+        {/* Timeline - Enhanced with turn markers */}
         <div className="px-4 py-2">
-          <div
-            ref={timelineRef}
-            className="relative h-8 bg-gray-700 rounded-full cursor-pointer overflow-hidden"
-            onClick={handleTimelineClick}
-          >
-            <div
-              className="absolute top-0 left-0 h-full bg-blue-600 transition-all"
-              style={{ width: `${progress}%` }}
-            />
-            <div
-              className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg transition-all"
-              style={{ left: `calc(${progress}% - 8px)` }}
-            />
-          </div>
+          <ReplayTimeline
+            events={replayData.events}
+            currentIndex={currentIndex}
+            onSeek={handleEventClick}
+            players={replayData.players}
+          />
         </div>
         
         {/* Controls */}

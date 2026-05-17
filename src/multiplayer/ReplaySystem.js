@@ -143,7 +143,12 @@ export function deleteLocalReplay(replayId) {
  * Export replay as JSON file
  */
 export function exportReplay(replayData) {
-  const json = JSON.stringify(replayData, null, 2);
+  const exportData = {
+    ...replayData,
+    exportedAt: new Date().toISOString(),
+    version: '1.1.0', // Updated version with enhanced player data
+  };
+  const json = JSON.stringify(exportData, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   
