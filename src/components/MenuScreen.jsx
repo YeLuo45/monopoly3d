@@ -5,6 +5,7 @@ import { getLocalReplays } from '../multiplayer/ReplaySystem';
 import ReplayList from '../multiplayer/ReplayList';
 import ShopScreen from '../features/shop/ShopScreen';
 import { AchievementPanel, useAchievementStore } from '../features/achievement';
+import { ParentDashboard } from '../features/teaching';
 import { OnlineLobby } from '../multiplayer';
 import { LOCALES, getLocale, setLocale, getLocaleName, t } from '../i18n';
 
@@ -71,6 +72,7 @@ export default function MenuScreen() {
 
   const [showReplayList, setShowReplayList] = useState(false);
   const [showShop, setShowShop] = useState(false);
+  const [showParentDashboard, setShowParentDashboard] = useState(false);
   const [activeTab, setActiveTab] = useState('game');
   const [replayList, setReplayList] = useState([]);
   const [isLoadingReplays, setIsLoadingReplays] = useState(false);
@@ -618,6 +620,17 @@ export default function MenuScreen() {
               </button>
 
               <button
+                onClick={() => setShowParentDashboard(true)}
+                className="flex items-center gap-4 px-6 py-5 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl text-left hover:scale-[1.02] transition-all shadow-lg hover:shadow-cyan-500/30"
+              >
+                <span className="text-3xl">👨‍👩‍👧</span>
+                <div>
+                  <div className="text-lg font-bold">{t('parent_console') || '家长控制台'}</div>
+                  <div className="text-xs text-cyan-200 opacity-70">{t('parent_console_desc') || '监控孩子学习进度'}</div>
+                </div>
+              </button>
+
+              <button
                 onClick={useGameStore.getState().goToWorkshop}
                 className="flex items-center gap-4 px-6 py-5 bg-gradient-to-r from-pink-600 to-rose-600 rounded-2xl text-left hover:scale-[1.02] transition-all shadow-lg hover:shadow-pink-500/30"
               >
@@ -708,6 +721,14 @@ export default function MenuScreen() {
       {/* Shop Modal */}
       {showShop && (
         <ShopScreen onClose={() => setShowShop(false)} />
+      )}
+
+      {/* Parent Dashboard Modal */}
+      {showParentDashboard && (
+        <ParentDashboard
+          studentId="parent-view"
+          onClose={() => setShowParentDashboard(false)}
+        />
       )}
     </div>
   );
