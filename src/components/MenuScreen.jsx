@@ -9,6 +9,7 @@ import AIDecisionOverlay from '../features/aiWatch/AIDecisionOverlay';
 import { AchievementPanel, useAchievementStore } from '../features/achievement';
 import { ParentDashboard } from '../features/teaching';
 import { useAIWatchStore } from '../features/aiWatch/aiWatchStore';
+import Leaderboard from '../features/leaderboard/Leaderboard';
 import { OnlineLobby } from '../multiplayer';
 import { LOCALES, getLocale, setLocale, getLocaleName, t } from '../i18n';
 
@@ -77,6 +78,7 @@ export default function MenuScreen() {
   const [showShop, setShowShop] = useState(false);
   const [showParentDashboard, setShowParentDashboard] = useState(false);
   const [showWatchMode, setShowWatchMode] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [activeTab, setActiveTab] = useState('game');
   const [replayList, setReplayList] = useState([]);
   const [isLoadingReplays, setIsLoadingReplays] = useState(false);
@@ -655,6 +657,17 @@ export default function MenuScreen() {
                   <div className="text-xs text-indigo-200 opacity-70">{t('ai_watch_desc') || '观战AI决策过程'}</div>
                 </div>
               </button>
+
+              <button
+                onClick={() => setShowLeaderboard(true)}
+                className="flex items-center gap-4 px-6 py-5 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl text-left hover:scale-[1.02] transition-all shadow-lg hover:shadow-emerald-500/30"
+              >
+                <span className="text-3xl">📊</span>
+                <div>
+                  <div className="text-lg font-bold">{t('leaderboard') || '排行榜'}</div>
+                  <div className="text-xs text-emerald-200 opacity-70">{t('leaderboard_desc') || '查看全球排名'}</div>
+                </div>
+              </button>
             </div>
           )}
 
@@ -757,6 +770,15 @@ export default function MenuScreen() {
 
       {/* AI Decision Overlay (always visible in watch mode) */}
       <AIDecisionOverlay visible={useAIWatchStore.getState().isWatchMode} />
+
+      {/* Leaderboard Modal */}
+      {showLeaderboard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="bg-gray-900 rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden shadow-2xl border border-emerald-500/30">
+            <Leaderboard onClose={() => setShowLeaderboard(false)} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

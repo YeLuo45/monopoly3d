@@ -212,3 +212,36 @@ CREATE POLICY "Allow all on players" ON players FOR ALL USING (true);
 CREATE POLICY "Allow all on game_events" ON game_events FOR ALL USING (true);
 CREATE POLICY "Allow all on chat_messages" ON chat_messages FOR ALL USING (true);
 CREATE POLICY "Allow all on replays" ON replays FOR ALL USING (true);
+
+-- =====================================================
+-- LEADERBOARD TABLES
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS leaderboard (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  player_id TEXT UNIQUE NOT NULL,
+  player_name TEXT,
+  avatar TEXT DEFAULT '👤',
+  games_played INTEGER DEFAULT 0,
+  wins INTEGER DEFAULT 0,
+  win_rate NUMERIC(5,4) DEFAULT 0,
+  achievement_points INTEGER DEFAULT 0,
+  total_wealth BIGINT DEFAULT 0,
+  current_streak INTEGER DEFAULT 0,
+  best_streak INTEGER DEFAULT 0,
+  total_play_time INTEGER DEFAULT 0, -- in seconds
+  last_game_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_leaderboard_wins ON leaderboard(wins DESC);
+CREATE INDEX IF NOT EXISTS idx_leaderboard_games ON leaderboard(games_played DESC);
+CREATE INDEX IF NOT EXISTS idx_leaderboard_win_rate ON leaderboard(win_rate DESC);
+CREATE INDEX IF NOT EXISTS idx_leaderboard_achievement_points ON leaderboard(achievement_points DESC);
+CREATE INDEX IF NOT EXISTS idx_leaderboard_wealth ON leaderboard(total_wealth DESC);
+CREATE INDEX IF NOT EXISTS idx_leaderboard_streak ON leaderboard(current_streak DESC);
+CREATE INDEX IF NOT EXISTS idx_leaderboard_updated ON leaderboard(updated_at);
+
+ALTER PUBLICATION supabase_realtime ADD TABLE leaderboard;
+CREATE POLICY "Allow all on leaderboard" ON leaderboard FOR ALL USING (true);
