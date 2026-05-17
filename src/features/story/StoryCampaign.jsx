@@ -36,7 +36,7 @@ export default function StoryCampaign({ onClose }) {
       const firstUnlocked = chapters.find(c => c.isUnlocked && !c.isCompleted);
       if (firstUnlocked) setSelectedChapter(firstUnlocked.id);
     }
-  }, []);
+  }, [selectedChapter, chapters]);
 
   const selectedChapterData = chapters.find(c => c.id === selectedChapter);
 
