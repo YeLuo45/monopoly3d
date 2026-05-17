@@ -18,6 +18,7 @@ import TournamentLobby from '../features/tournament/TournamentLobby';
 import AITeammatePanel from '../features/aiTeammate/AITeammatePanel';
 import CloudSaveManager from '../features/cloud/CloudSaveManager';
 import CreatorDashboard from '../features/workshop/CreatorDashboard';
+import StoryCampaign from '../features/story/StoryCampaign';
 import { LOCALES, getLocale, setLocale, getLocaleName, t } from '../i18n';
 
 function LanguageSelector() {
@@ -807,6 +808,9 @@ export default function MenuScreen() {
 
       {/* Creator Dashboard */}
       <CreatorDashboard onClose={() => {}} />
+
+      {/* Story Campaign */}
+      <StoryCampaign onClose={() => {}} />
     </div>
   );
 }
