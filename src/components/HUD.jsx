@@ -102,9 +102,9 @@ export default function HUD() {
         </div>
       )}
 
-      {/* Current tile info */}
+      {/* Current tile info - moved to left side, below player panels */}
       {currentTile && phase !== 'moving' && phase !== 'question' && (
-        <div className="absolute bottom-20 right-4 bg-black/60 backdrop-blur-sm rounded-xl px-4 py-3">
+        <div className="absolute left-3 bottom-4 bg-black/60 backdrop-blur-sm rounded-xl px-4 py-3 max-w-[200px]">
           <div className="text-xs text-gray-400 mb-1">{t('hud_current_position')}</div>
           <div className="text-white font-bold">{getTileName(currentTile)}</div>
           <div className="text-xs text-gray-300">
@@ -121,8 +121,8 @@ export default function HUD() {
         </div>
       )}
 
-      {/* Emote Picker */}
-      <div className="absolute bottom-20 right-4 pointer-events-auto">
+      {/* Emote Picker - moved to top-right, below top bar */}
+      <div className="absolute top-16 right-4 pointer-events-auto">
         <EmotePicker />
       </div>
     </div>
