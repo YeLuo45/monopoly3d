@@ -15,6 +15,7 @@ import { t } from '../../i18n';
 export default function StoryCampaign({ onClose }) {
   const [activeView, setActiveView] = useState('chapters'); // chapters | missions | rewards
   const [selectedChapter, setSelectedChapter] = useState(null);
+  const [isReady, setIsReady] = useState(false);
 
   const chapters = useStoryModeStore(s => s.chapters);
   const currentChapterId = useStoryModeStore(s => s.currentChapterId);
@@ -28,14 +29,32 @@ export default function StoryCampaign({ onClose }) {
   const dismissEvent = useStoryModeStore(s => s.dismissEvent);
   const setCurrentChapter = useStoryModeStore(s => s.setCurrentChapter);
 
-  const progress = getCampaignProgress();
+  // Memoize progress to prevent recalculation
+  const progress = useStoryModeStore(s => {
+    const chapters = s.chapters;
+    const totalMissions = chapters.reduce((sum, c) => sum + c.missions.length, 0);
+    const completedMissions = chapters.reduce(
+      (sum, c) => sum + c.missions.filter(m => m.isCompleted).length, 0
+    );
+    return {
+      chaptersCompleted: chapters.filter(c => c.isCompleted).length,
+      totalChapters: chapters.length,
+      missionsCompleted: completedMissions,
+      totalMissions,
+      progressPercent: totalMissions > 0 ? Math.round((completedMissions / totalMissions) * 100) : 0,
+    };
+  });
 
-  // Auto-select first unlocked non-completed chapter
+  // Auto-select first unlocked non-completed chapter - defer to avoid render loop
   useEffect(() => {
-    if (!selectedChapter) {
-      const firstUnlocked = chapters.find(c => c.isUnlocked && !c.isCompleted);
-      if (firstUnlocked) setSelectedChapter(firstUnlocked.id);
-    }
+    const timer = setTimeout(() => {
+      if (!selectedChapter) {
+        const firstUnlocked = chapters.find(c => c.isUnlocked && !c.isCompleted);
+        if (firstUnlocked) setSelectedChapter(firstUnlocked.id);
+      }
+      setIsReady(true);
+    }, 100);
+    return () => clearTimeout(timer);
   }, [selectedChapter, chapters]);
 
   const selectedChapterData = chapters.find(c => c.id === selectedChapter);

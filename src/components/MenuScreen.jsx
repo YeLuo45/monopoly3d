@@ -91,6 +91,16 @@ export default function MenuScreen() {
   const [replayList, setReplayList] = useState([]);
   const [isLoadingReplays, setIsLoadingReplays] = useState(false);
 
+  // Panel visibility states - conditional rendering to prevent React error #185
+  const [showSeasonPass, setShowSeasonPass] = useState(false);
+  const [showSeasonChallenges, setShowSeasonChallenges] = useState(false);
+  const [showAchievementShowcase, setShowAchievementShowcase] = useState(false);
+  const [showTournamentLobby, setShowTournamentLobby] = useState(false);
+  const [showAITeammatePanel, setShowAITeammatePanel] = useState(false);
+  const [showCloudSave, setShowCloudSave] = useState(false);
+  const [showCreatorDashboard, setShowCreatorDashboard] = useState(false);
+  const [showStoryCampaign, setShowStoryCampaign] = useState(false);
+
   useEffect(() => {
     const savedId = loadStudentId();
     if (!savedId) {
@@ -788,29 +798,29 @@ export default function MenuScreen() {
         </div>
       )}
 
-      {/* Season Pass */}
-      <SeasonPass />
+      {/* Season Pass - only render when panel is open */}
+      {showSeasonPass && <SeasonPass onClose={() => setShowSeasonPass(false)} />}
 
-      {/* Season Challenges */}
-      <SeasonChallenges />
+      {/* Season Challenges - only render when panel is open */}
+      {showSeasonChallenges && <SeasonChallenges onClose={() => setShowSeasonChallenges(false)} />}
 
-      {/* Achievement Showcase */}
-      <AchievementShowcase />
+      {/* Achievement Showcase - only render when panel is open */}
+      {showAchievementShowcase && <AchievementShowcase onClose={() => setShowAchievementShowcase(false)} />}
 
-      {/* Tournament Lobby */}
-      <TournamentLobby onClose={() => {}} />
+      {/* Tournament Lobby - only render when panel is open */}
+      {showTournamentLobby && <TournamentLobby onClose={() => setShowTournamentLobby(false)} />}
 
-      {/* AI Teammate Panel */}
-      <AITeammatePanel onClose={() => {}} />
+      {/* AI Teammate Panel - only render when panel is open */}
+      {showAITeammatePanel && <AITeammatePanel onClose={() => setShowAITeammatePanel(false)} />}
 
-      {/* Cloud Save Manager */}
-      <CloudSaveManager onClose={() => {}} />
+      {/* Cloud Save Manager - only render when panel is open */}
+      {showCloudSave && <CloudSaveManager onClose={() => setShowCloudSave(false)} />}
 
-      {/* Creator Dashboard */}
-      <CreatorDashboard onClose={() => {}} />
+      {/* Creator Dashboard - only render when panel is open */}
+      {showCreatorDashboard && <CreatorDashboard onClose={() => setShowCreatorDashboard(false)} />}
 
-      {/* Story Campaign */}
-      <StoryCampaign onClose={() => {}} />
+      {/* Story Campaign - only render when panel is open */}
+      {showStoryCampaign && <StoryCampaign onClose={() => setShowStoryCampaign(false)} />}
     </div>
   );
 }
