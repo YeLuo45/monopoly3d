@@ -15,6 +15,7 @@ import SeasonPass from '../features/season/SeasonPass';
 import SeasonChallenges from '../features/season/SeasonChallenges';
 import AchievementShowcase from '../features/achievement/AchievementShowcase';
 import TournamentLobby from '../features/tournament/TournamentLobby';
+import AITeammatePanel from '../features/aiTeammate/AITeammatePanel';
 import { LOCALES, getLocale, setLocale, getLocaleName, t } from '../i18n';
 
 function LanguageSelector() {
@@ -795,6 +796,9 @@ export default function MenuScreen() {
 
       {/* Tournament Lobby */}
       <TournamentLobby onClose={() => {}} />
+
+      {/* AI Teammate Panel */}
+      <AITeammatePanel onClose={() => {}} />
     </div>
   );
 }
