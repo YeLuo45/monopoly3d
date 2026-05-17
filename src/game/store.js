@@ -58,6 +58,25 @@ function checkBankruptcy(player) {
 // Categories
 const ALL_CATEGORIES = ['math', 'shape', 'time', 'geography', 'science', 'reading', 'life', 'emotion', 'animal'];
 
+/**
+ * Get all complete color groups owned by a player
+ */
+function getColorGroupsOwned(player) {
+  const groups = new Set();
+  for (const propId of player.properties) {
+    const tile = BOARD_CONFIG[propId];
+    if (tile && tile.colorGroup) {
+      // Check if player owns all tiles in this color group
+      const groupTiles = BOARD_CONFIG.filter(t => t.colorGroup === tile.colorGroup);
+      const ownsAll = groupTiles.every(t => player.properties.includes(t.id));
+      if (ownsAll) {
+        groups.add(tile.colorGroup);
+      }
+    }
+  }
+  return groups;
+}
+
 const initialState = {
   // Screen state
   screen: 'menu', // menu | setup | piece_selection | playing | gameover | profile
@@ -128,6 +147,10 @@ const initialState = {
   peerId: null,
   roomCode: null,
   onlinePlayerIndex: 0,
+
+  // Trade system
+  tradeProposal: null, // { from, to, giveProps, receiveProps, giveMoney, receiveMoney }
+  activeAuction: null, // { tileId, currentBid, highestBidder, biddingHistory, turnTimeout }
 };
 
 export const useGameStore = create((set, get) => ({
@@ -901,7 +924,280 @@ export const useGameStore = create((set, get) => ({
   
   passProperty: () => {
     const state = get();
-    set({ phase: 'roll', ...advanceToNextPlayer(state) });
+    const currentPlayer = state.players[state.currentPlayerIndex];
+    const tile = BOARD_CONFIG[currentPlayer.position];
+
+    // If it's a property tile and no one owns it, start auction
+    if (tile && tile.type === TILE_TYPES.PROPERTY && tile.owner === null) {
+      get().startAuction(tile.id);
+    } else {
+      set({ phase: 'roll', ...advanceToNextPlayer(state) });
+    }
+  },
+
+  // ==================== TRADE SYSTEM ====================
+
+  /**
+   * Propose a trade to another player
+   * @param {Object} proposal - { to, giveProps[], receiveProps[], giveMoney, receiveMoney }
+   */
+  proposeTrade: (proposal) => {
+    const state = get();
+    const from = state.currentPlayerIndex;
+    set({
+      tradeProposal: {
+        from,
+        to: proposal.to,
+        giveProps: proposal.giveProps || [],
+        receiveProps: proposal.receiveProps || [],
+        giveMoney: proposal.giveMoney || 0,
+        receiveMoney: proposal.receiveMoney || 0,
+        status: 'pending', // pending | accepted | rejected | counteroffered
+      },
+      phase: 'trade_proposal',
+    });
+  },
+
+  /**
+   * AI proposes trade based on personality and game state
+   */
+  aiProposeTrade: () => {
+    const state = get();
+    const currentPlayer = state.players[state.currentPlayerIndex];
+    if (!currentPlayer.isAI) return;
+
+    const personality = currentPlayer.personality;
+    const potentialTradePartners = state.players
+      .filter((p, i) => i !== state.currentPlayerIndex && !p.isBankrupt);
+
+    if (potentialTradePartners.length === 0) return;
+
+    // Aggressive AI looks for monopoly-completion trades
+    if (personality === AI_PERSONALITY.AGGRESSIVE) {
+      const myGroups = getColorGroupsOwned(currentPlayer);
+      for (const partner of potentialTradePartners) {
+        const partnerGroups = getColorGroupsOwned(partner);
+        // Look for complementary groups (I have some, they have others from same group)
+        for (const myGroup of myGroups) {
+          const needed = partner.properties.filter(pId => {
+            const tile = BOARD_CONFIG[pId];
+            return tile && tile.colorGroup === myGroup && !currentPlayer.properties.includes(pId);
+          });
+          if (needed.length > 0) {
+            // Propose trade: give them money for needed properties
+            const totalValue = needed.reduce((sum, pId) => sum + (BOARD_CONFIG[pId]?.price || 0), 0);
+            get().proposeTrade({
+              to: partner.id,
+              giveMoney: Math.floor(totalValue * 0.8),
+              receiveProps: needed,
+            });
+            return;
+          }
+        }
+      }
+    }
+
+    // Conservative AI trades for complete monopolies to build
+    if (personality === AI_PERSONALITY.CONSERVATIVE) {
+      for (const partner of potentialTradePartners) {
+        // Look for any property that completes a set
+        for (const propId of currentPlayer.properties) {
+          const tile = BOARD_CONFIG[propId];
+          if (!tile || !tile.colorGroup) continue;
+          const groupTiles = BOARD_CONFIG.filter(t => t.colorGroup === tile.colorGroup);
+          const ownedByPartner = groupTiles.filter(t => partner.properties.includes(t.id));
+          if (ownedByPartner.length > 0) {
+            const value = ownedByPartner.reduce((sum, t) => sum + (t.price || 0), 0);
+            get().proposeTrade({
+              to: partner.id,
+              giveMoney: Math.floor(value * 0.9),
+              receiveProps: ownedByPartner.map(t => t.id),
+            });
+            return;
+          }
+        }
+      }
+    }
+  },
+
+  /**
+   * Accept a trade proposal
+   */
+  acceptTrade: () => {
+    const state = get();
+    const proposal = state.tradeProposal;
+    if (!proposal || proposal.status !== 'pending') return;
+
+    const players = [...state.players];
+    const fromPlayer = players[proposal.from];
+    const toPlayer = players[proposal.to];
+
+    // Execute property transfers
+    for (const propId of proposal.giveProps) {
+      fromPlayer.properties = fromPlayer.properties.filter(p => p !== propId);
+      toPlayer.properties.push(propId);
+      BOARD_CONFIG[propId].owner = proposal.to;
+    }
+    for (const propId of proposal.receiveProps) {
+      toPlayer.properties = toPlayer.properties.filter(p => p !== propId);
+      fromPlayer.properties.push(propId);
+      BOARD_CONFIG[propId].owner = proposal.from;
+    }
+
+    // Execute money transfers
+    fromPlayer.money += proposal.giveMoney - proposal.receiveMoney;
+    toPlayer.money += proposal.receiveMoney - proposal.giveMoney;
+
+    set({
+      players,
+      tradeProposal: { ...proposal, status: 'accepted' },
+      phase: 'roll',
+    });
+
+    setTimeout(() => set({ tradeProposal: null }), 100);
+  },
+
+  /**
+   * Reject a trade proposal
+   */
+  rejectTrade: () => {
+    const state = get();
+    if (state.tradeProposal) {
+      set({
+        tradeProposal: { ...state.tradeProposal, status: 'rejected' },
+        phase: 'roll',
+      });
+      setTimeout(() => set({ tradeProposal: null }), 100);
+    }
+  },
+
+  // ==================== AUCTION SYSTEM ====================
+
+  /**
+   * Start auction when a property is passed
+   */
+  startAuction: (tileId) => {
+    const state = get();
+    const tile = BOARD_CONFIG[tileId];
+    const startingBid = Math.floor(tile.price / 2); // Start at 50% of property price
+
+    set({
+      activeAuction: {
+        tileId,
+        currentBid: startingBid,
+        highestBidder: null,
+        biddingHistory: [], // [{ playerId, bid, timestamp }]
+        turnTimeout: 15000, // 15 seconds per bid round
+        status: 'active', // active | won | cancelled
+        currentBidderIndex: state.currentPlayerIndex,
+      },
+      phase: 'auction',
+    });
+  },
+
+  /**
+   * Place a bid in the active auction
+   */
+  placeBid: (bidAmount) => {
+    const state = get();
+    const auction = state.activeAuction;
+    if (!auction || auction.status !== 'active') return;
+    if (bidAmount <= auction.currentBid) return;
+
+    const currentPlayer = state.players[auction.currentBidderIndex];
+    if (bidAmount > currentPlayer.money) return; // Can't bid more than you have
+
+    const newHistory = [...auction.biddingHistory, {
+      playerId: currentPlayer.id,
+      bid: bidAmount,
+      timestamp: Date.now(),
+    }];
+
+    set({
+      activeAuction: {
+        ...auction,
+        currentBid: bidAmount,
+        highestBidder: currentPlayer.id,
+        biddingHistory: newHistory,
+        currentBidderIndex: (auction.currentBidderIndex + 1) % state.players.length,
+      },
+    });
+  },
+
+  /**
+   * AI places bid based on personality
+   */
+  aiPlaceBid: () => {
+    const state = get();
+    const auction = state.activeAuction;
+    if (!auction) return;
+
+    const currentPlayer = state.players[auction.currentBidderIndex];
+    if (!currentPlayer.isAI) return;
+
+    const personality = currentPlayer.personality;
+    const tile = BOARD_CONFIG[auction.tileId];
+    const maxBid = tile.price * (personality === AI_PERSONALITY.AGGRESSIVE ? 1.2 :
+                               personality === AI_PERSONALITY.CONSERVATIVE ? 0.9 : 1.0);
+
+    // Calculate how much to bid above current
+    const increment = Math.floor(tile.price * 0.1);
+    let bidAmount = auction.currentBid + increment;
+
+    // Aggressive AI bids more aggressively
+    if (personality === AI_PERSONALITY.AGGRESSIVE) {
+      while (bidAmount <= maxBid && Math.random() > 0.3) {
+        bidAmount += increment;
+      }
+    } else if (personality === AI_PERSONALITY.CONSERVATIVE) {
+      // Conservative only bids if it completes a monopoly
+      const ownedInGroup = currentPlayer.properties.filter(pId => {
+        const t = BOARD_CONFIG[pId];
+        return t && t.colorGroup === tile.colorGroup;
+      }).length;
+      if (ownedInGroup === 0) return; // Don't bid if no chance of monopoly
+    }
+
+    if (bidAmount <= Math.min(maxBid, currentPlayer.money)) {
+      get().placeBid(bidAmount);
+    }
+  },
+
+  /**
+   * Drop out of auction (pass)
+   */
+  dropOutOfAuction: () => {
+    const state = get();
+    const auction = state.activeAuction;
+    if (!auction) return;
+
+    // Check if only one player left bidding
+    const activeBidders = state.players.filter(p => {
+      if (p.isBankrupt) return false;
+      const hasDroppedOut = auction.biddingHistory.length > 0 &&
+        auction.biddingHistory.some(h => h.playerId === p.id);
+      return !hasDroppedOut;
+    });
+
+    if (activeBidders.length <= 1) {
+      // Auction ends
+      if (auction.highestBidder !== null) {
+        // Winner pays and gets property
+        const winner = state.players.find(p => p.id === auction.highestBidder);
+        const winnerIndex = state.players.findIndex(p => p.id === auction.highestBidder);
+        const players = [...state.players];
+        players[winnerIndex].money -= auction.currentBid;
+        players[winnerIndex].properties.push(auction.tileId);
+        BOARD_CONFIG[auction.tileId].owner = winner.id;
+        set({
+          players,
+          activeAuction: { ...auction, status: 'won', winner: winner.id },
+        });
+      } else {
+        set({ activeAuction: { ...auction, status: 'cancelled' } });
+      }
+      setTimeout(() => set({ activeAuction: null, phase: 'roll' }), 1500);
+    }
   },
   
   buildHouse: (tileId) => {
