@@ -245,3 +245,37 @@ CREATE INDEX IF NOT EXISTS idx_leaderboard_updated ON leaderboard(updated_at);
 
 ALTER PUBLICATION supabase_realtime ADD TABLE leaderboard;
 CREATE POLICY "Allow all on leaderboard" ON leaderboard FOR ALL USING (true);
+
+-- =====================================================
+-- USER PROFILES & CLOUD SAVE TABLES
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  display_name TEXT NOT NULL DEFAULT '玩家',
+  avatar TEXT DEFAULT '👤',
+  level INTEGER DEFAULT 1,
+  xp INTEGER DEFAULT 0,
+  coins INTEGER DEFAULT 1000,
+  games_played INTEGER DEFAULT 0,
+  games_won INTEGER DEFAULT 0,
+  total_xp_earned INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS cloud_saves (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  save_key TEXT NOT NULL,
+  data JSONB DEFAULT '{}',
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, save_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cloud_saves_user ON cloud_saves(user_id);
+CREATE INDEX IF NOT EXISTS idx_cloud_saves_updated ON cloud_saves(updated_at DESC);
+
+ALTER PUBLICATION supabase_realtime ADD TABLE cloud_saves;
+CREATE POLICY "Allow all on profiles" ON profiles FOR ALL USING (true);
+CREATE POLICY "Allow all on cloud_saves" ON cloud_saves FOR ALL USING (true);

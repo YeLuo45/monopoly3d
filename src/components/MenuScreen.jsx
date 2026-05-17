@@ -16,6 +16,7 @@ import SeasonChallenges from '../features/season/SeasonChallenges';
 import AchievementShowcase from '../features/achievement/AchievementShowcase';
 import TournamentLobby from '../features/tournament/TournamentLobby';
 import AITeammatePanel from '../features/aiTeammate/AITeammatePanel';
+import CloudSaveManager from '../features/cloud/CloudSaveManager';
 import { LOCALES, getLocale, setLocale, getLocaleName, t } from '../i18n';
 
 function LanguageSelector() {
@@ -799,6 +800,9 @@ export default function MenuScreen() {
 
       {/* AI Teammate Panel */}
       <AITeammatePanel onClose={() => {}} />
+
+      {/* Cloud Save Manager */}
+      <CloudSaveManager onClose={() => {}} />
     </div>
   );
 }
