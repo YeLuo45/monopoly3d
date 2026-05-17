@@ -14,6 +14,7 @@ import { OnlineLobby } from '../multiplayer';
 import SeasonPass from '../features/season/SeasonPass';
 import SeasonChallenges from '../features/season/SeasonChallenges';
 import AchievementShowcase from '../features/achievement/AchievementShowcase';
+import TournamentLobby from '../features/tournament/TournamentLobby';
 import { LOCALES, getLocale, setLocale, getLocaleName, t } from '../i18n';
 
 function LanguageSelector() {
@@ -791,6 +792,9 @@ export default function MenuScreen() {
 
       {/* Achievement Showcase */}
       <AchievementShowcase />
+
+      {/* Tournament Lobby */}
+      <TournamentLobby onClose={() => {}} />
     </div>
   );
 }
