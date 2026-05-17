@@ -11,6 +11,8 @@ import { ParentDashboard } from '../features/teaching';
 import { useAIWatchStore } from '../features/aiWatch/aiWatchStore';
 import Leaderboard from '../features/leaderboard/Leaderboard';
 import { OnlineLobby } from '../multiplayer';
+import SeasonPass from '../features/season/SeasonPass';
+import SeasonChallenges from '../features/season/SeasonChallenges';
 import { LOCALES, getLocale, setLocale, getLocaleName, t } from '../i18n';
 
 function LanguageSelector() {
@@ -779,6 +781,12 @@ export default function MenuScreen() {
           </div>
         </div>
       )}
+
+      {/* Season Pass */}
+      <SeasonPass />
+
+      {/* Season Challenges */}
+      <SeasonChallenges />
     </div>
   );
 }
