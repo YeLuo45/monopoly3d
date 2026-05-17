@@ -127,6 +127,17 @@ const initialState = {
   // Piece selection (maps player index -> piece id)
   pieceSelections: {},
 
+  // AI Delegation system for disconnected players
+  aiDelegations: {}, // { playerId: { delegatedAt, originalName, delegatedBy } }
+  playerStates: {}, // { playerId: { money, properties, position, ... } } for reconnection preservation
+
+  // Dynamic difficulty adjustment
+  difficultySettings: {
+    enabled: true,
+    winRateTarget: 0.5, // Try to keep human win rate around 50%
+    adjustmentInterval: 3, // games
+  },
+
   // Theme
   currentTheme: THEMES.CLASSIC,
 
@@ -1064,15 +1075,126 @@ export const useGameStore = create((set, get) => ({
   /**
    * Reject a trade proposal
    */
-  rejectTrade: () => {
+rejectTrade: () => {
     const state = get();
     if (state.tradeProposal) {
       set({
         tradeProposal: { ...state.tradeProposal, status: 'rejected' },
         phase: 'roll',
       });
-      setTimeout(() => set({ tradeProposal: null }), 100);
     }
+    setTimeout(() => set({ tradeProposal: null }), 100);
+  },
+
+  // ==================== AI DELEGATION SYSTEM ====================
+  // When a human player disconnects, AI takes over their turn
+  // On reconnection, human can reclaim their turn with state restored
+
+  /**
+   * Delegate a disconnected player's turn to AI
+   */
+  delegateToAI: (playerId) => {
+    const state = get();
+    const playerIndex = state.players.findIndex(p => p.id === playerId);
+    if (playerIndex === -1) return;
+
+    const player = state.players[playerIndex];
+    if (player.isAI) return; // Already AI
+
+    // Save player state for later restoration
+    const playerState = {
+      money: player.money,
+      properties: [...player.properties],
+      position: player.position,
+      inJail: player.inJail,
+      jailTurns: player.jailTurns,
+      getOutOfJailFree: player.getOutOfJailFree,
+      personality: player.personality,
+    };
+
+    set(state => ({
+      playerStates: {
+        ...state.playerStates,
+        [playerId]: playerState,
+      },
+      aiDelegations: {
+        ...state.aiDelegations,
+        [playerId]: {
+          delegatedAt: Date.now(),
+          originalName: player.name,
+          delegatedBy: 'system',
+        },
+      },
+    }));
+
+    console.log(`[Store] Player ${player.name} delegated to AI at ${new Date().toLocaleTimeString()}`);
+  },
+
+  /**
+   * Reclaim turn from AI when player reconnects
+   */
+  reclaimFromAI: (playerId) => {
+    const state = get();
+    const savedState = state.playerStates[playerId];
+    if (!savedState) return;
+
+    const playerIndex = state.players.findIndex(p => p.id === playerId);
+    if (playerIndex === -1) return;
+
+    // Restore player state
+    set(state => {
+      const players = [...state.players];
+      players[playerIndex] = {
+        ...players[playerIndex],
+        ...savedState,
+        isAI: false,
+      };
+
+      // Remove delegation record
+      const aiDelegations = { ...state.aiDelegations };
+      delete aiDelegations[playerId];
+
+      // Remove saved state
+      const playerStates = { ...state.playerStates };
+      delete playerStates[playerId];
+
+      console.log(`[Store] Player ${players[playerIndex].name} reclaimed turn from AI`);
+
+      return { players, aiDelegations, playerStates };
+    });
+  },
+
+  /**
+   * Get the AI difficulty to use for a delegated turn
+   * Returns EASY/NORMAL/HARD based on dynamic difficulty settings
+   */
+  getAIDelegationDifficulty: (playerId) => {
+    const state = get();
+    const playerState = state.playerStates[playerId];
+    if (!playerState) return AI_DIFFICULTY.NORMAL;
+
+    // If player was doing well, use harder AI; if badly, use easier AI
+    // This is a simplified heuristic
+    const recentAccuracy = playerState.questionAccuracy || 0.5;
+    if (recentAccuracy > 0.7) return AI_DIFFICULTY.HARD;
+    if (recentAccuracy > 0.4) return AI_DIFFICULTY.NORMAL;
+    return AI_DIFFICULTY.EASY;
+  },
+
+  /**
+   * Check if a player is currently delegated to AI
+   */
+  isDelegatedToAI: (playerId) => {
+    return playerId in get().aiDelegations;
+  },
+
+  /**
+   * Get time since player was delegated
+   */
+  getDelegationDuration: (playerId) => {
+    const delegation = get().aiDelegations[playerId];
+    if (!delegation) return 0;
+    return Date.now() - delegation.delegatedAt;
   },
 
   // ==================== AUCTION SYSTEM ====================
