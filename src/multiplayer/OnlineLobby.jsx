@@ -33,6 +33,7 @@ export default function OnlineLobby({ onBack, onGameStart }) {
     createRoom,
     joinRoom,
     joinAsSpectator,
+    quickMatch,
     leaveRoom,
     setReady,
     startGame,
@@ -65,7 +66,25 @@ export default function OnlineLobby({ onBack, onGameStart }) {
     }
     setIsLoading(false);
   };
-  
+
+  const handleQuickMatch = async () => {
+    if (!playerName.trim()) {
+      alert('请输入你的名字');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const code = await quickMatch();
+      if (code) {
+        setMode('join');
+      }
+    } catch (err) {
+      console.error('Quick match failed:', err);
+    }
+    setIsLoading(false);
+  };
+
   const handleJoinRoom = async (code) => {
     if (!playerName.trim()) {
       alert('请输入你的名字');
@@ -173,6 +192,45 @@ export default function OnlineLobby({ onBack, onGameStart }) {
             <div className="text-xs text-gray-400 mb-2">房间码</div>
             <div className="text-4xl font-bold tracking-widest text-yellow-400 mb-2">
               {roomCode}
+            </div>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(roomCode);
+                alert('房间码已复制!');
+              }}
+              className="text-xs text-purple-400 hover:text-purple-300 underline"
+            >
+              点击复制房间码
+            </button>
+            {/* Invite Friends Section */}
+            <div className="mt-3 pt-3 border-t border-purple-500/30">
+              <div className="text-xs text-gray-400 mb-1">邀请好友</div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    const inviteText = `来玩Monopoly3D！房间码: ${roomCode}`;
+                    navigator.clipboard.writeText(inviteText);
+                    alert('邀请链接已复制!');
+                  }}
+                  className="flex-1 text-xs px-2 py-1 bg-purple-500/30 hover:bg-purple-500/50 rounded-lg text-purple-200 transition-colors"
+                >
+                  📋 复制邀请
+                </button>
+                <button
+                  onClick={() => {
+                    const shareText = `我在玩Monopoly3D！房间码是 ${roomCode}，快来加入我！🎮`;
+                    if (navigator.share) {
+                      navigator.share({ text: shareText });
+                    } else {
+                      navigator.clipboard.writeText(shareText);
+                      alert('分享文本已复制!');
+                    }
+                  }}
+                  className="flex-1 text-xs px-2 py-1 bg-blue-500/30 hover:bg-blue-500/50 rounded-lg text-blue-200 transition-colors"
+                >
+                  📤 分享
+                </button>
+              </div>
             </div>
             <div className="text-gray-400 text-sm">
               {players.length} / {currentRoom?.max_players || 6} 人
@@ -413,6 +471,15 @@ export default function OnlineLobby({ onBack, onGameStart }) {
             className="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl font-bold text-lg hover:scale-105 transition-all disabled:opacity-50"
           >
             {isLoading ? '创建中...' : '🏠 创建房间'}
+          </button>
+
+          {/* Quick Match Button */}
+          <button
+            onClick={handleQuickMatch}
+            disabled={isLoading || !isConnected}
+            className="w-full px-6 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl font-bold text-lg hover:scale-105 transition-all disabled:opacity-50"
+          >
+            {isLoading ? '匹配中...' : '⚡ 快速匹配'}
           </button>
           
           <div className="text-center text-gray-500 my-2">或者</div>

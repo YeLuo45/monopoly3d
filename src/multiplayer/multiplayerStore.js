@@ -920,6 +920,128 @@ export const useMultiplayerStore = create((set, get) => ({
     }));
   },
 
+  /**
+   * Quick Match - Find and join a random waiting room
+   * Returns room code if successful, null if no rooms available
+   */
+  quickMatch: async () => {
+    const { playerId, playerName, playerColor } = get();
+    
+    set({ isConnecting: true, connectionError: null });
+    
+    try {
+      // Find all waiting rooms with available slots
+      const { data: rooms, error: roomsError } = await supabase
+        .from('rooms')
+        .select('*')
+        .eq('status', 'waiting')
+        .order('created_at', { ascending: true });
+      
+      if (roomsError) throw roomsError;
+      
+      // Filter rooms that have available slots
+      const availableRooms = [];
+      for (const room of rooms || []) {
+        const { count } = await supabase
+          .from('players')
+          .select('*', { count: 'exact', head: true })
+          .eq('room_id', room.id);
+        
+        if (count < room.max_players) {
+          availableRooms.push({ ...room, playerCount: count });
+        }
+      }
+      
+      if (availableRooms.length === 0) {
+        set({ isConnecting: false, connectionError: '暂无可用房间，请创建新房间' });
+        return null;
+      }
+      
+      // Pick a random room from available ones
+      const selectedRoom = availableRooms[Math.floor(Math.random() * availableRooms.length)];
+      
+      // Join the room
+      const { data: existingPlayer } = await supabase
+        .from('players')
+        .select('*')
+        .eq('room_id', selectedRoom.id)
+        .eq('player_id', playerId)
+        .single();
+      
+      let player;
+      if (existingPlayer) {
+        await supabase
+          .from('players')
+          .update({ is_online: true, last_active_at: new Date() })
+          .eq('player_id', playerId);
+        player = existingPlayer;
+      } else {
+        // Get next order index
+        const { data: maxOrder } = await supabase
+          .from('players')
+          .select('order_index')
+          .eq('room_id', selectedRoom.id)
+          .order('order_index', { ascending: false })
+          .limit(1);
+        
+        const nextOrder = maxOrder?.[0]?.order_index + 1 || 0;
+        
+        const { data: newPlayer, error: playerError } = await supabase
+          .from('players')
+          .insert({
+            room_id: selectedRoom.id,
+            player_id: playerId,
+            name: playerName,
+            color: playerColor,
+            order_index: nextOrder,
+            is_ready: false,
+            is_online: true,
+          })
+          .select()
+          .single();
+        
+        if (playerError) throw playerError;
+        player = newPlayer;
+      }
+      
+      // Get all players in room
+      const { data: allPlayers } = await supabase
+        .from('players')
+        .select('*')
+        .eq('room_id', selectedRoom.id)
+        .order('order_index');
+      
+      const playersWithSelf = allPlayers.map(p => ({
+        ...p,
+        isSelf: p.player_id === playerId,
+      }));
+      
+      set({
+        currentRoom: selectedRoom,
+        roomCode: selectedRoom.code,
+        isHost: selectedRoom.host_id === playerId,
+        isSpectator: false,
+        players: playersWithSelf,
+        playerCount: playersWithSelf.length,
+        isConnecting: false,
+        connectionError: null,
+      });
+      
+      // Subscribe to room updates
+      get().subscribeToRoom(selectedRoom.id);
+      
+      console.log('[MultiplayerStore] Quick matched to room:', selectedRoom.code);
+      return selectedRoom.code;
+    } catch (err) {
+      console.error('[MultiplayerStore] Quick match error:', err);
+      set({
+        isConnecting: false,
+        connectionError: '快速匹配失败: ' + err.message,
+      });
+      return null;
+    }
+  },
+
   // ============================================
   // SPECTATOR MODE
   // ============================================
