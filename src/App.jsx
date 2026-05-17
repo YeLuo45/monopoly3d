@@ -25,6 +25,8 @@ import { TeacherPage, StudentHomeworkPanel } from './features/teaching';
 
 // Learning Features
 import AIAssistant from './features/learning/AIAssistant';
+import PracticeMode from './features/learning/PracticeMode';
+import LearningReport from './features/learning/LearningReport';
 import ContextualTip from './components/ContextualTip';
 
 // Online Multiplayer
