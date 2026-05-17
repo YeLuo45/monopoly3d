@@ -121,8 +121,12 @@ const initialState = {
   enabledCategories: ['math', 'shape', 'time', 'geography', 'science', 'reading', 'life', 'emotion', 'animal'], // which categories are enabled for gameplay
   customQuestions: [], // custom questions imported by teacher
 
-  // Winner
-  winner: null,
+// AI delegation (for disconnected players)
+  aiDelegations: {},
+
+  // Emotes & Reactions
+  activeEmotes: {}, // { playerId: { emote, timestamp, position } }
+  playerEmoteHistory: {}, // { playerId: [emote1, emote2, ...] }
 
   // Piece selection (maps player index -> piece id)
   pieceSelections: {},
@@ -1195,6 +1199,64 @@ rejectTrade: () => {
     const delegation = get().aiDelegations[playerId];
     if (!delegation) return 0;
     return Date.now() - delegation.delegatedAt;
+  },
+
+  // ==================== EMOTE SYSTEM ====================
+
+  /**
+   * Send an emote for a player
+   * @param {string} playerId
+   * @param {string} emote - emoji character
+   * @param {object} position - { x, y, z } world position
+   */
+  sendEmote: (playerId, emote, position = null) => {
+    set(state => ({
+      activeEmotes: {
+        ...state.activeEmotes,
+        [playerId]: {
+          emote,
+          timestamp: Date.now(),
+          position,
+        },
+      },
+      // Also add to history
+      playerEmoteHistory: {
+        ...state.playerEmoteHistory,
+        [playerId]: [
+          ...(state.playerEmoteHistory[playerId] || []),
+          { emote, timestamp: Date.now() },
+        ].slice(-20), // Keep last 20
+      },
+    }));
+
+    // Auto-clear after 3 seconds
+    setTimeout(() => {
+      set(state => {
+        const current = state.activeEmotes[playerId];
+        if (current && Date.now() - current.timestamp >= 3000) {
+          const { [playerId]: _, ...rest } = state.activeEmotes;
+          return { activeEmotes: rest };
+        }
+        return state;
+      });
+    }, 3000);
+  },
+
+  /**
+   * Clear a specific player's emote
+   */
+  clearEmote: (playerId) => {
+    set(state => {
+      const { [playerId]: _, ...rest } = state.activeEmotes;
+      return { activeEmotes: rest };
+    });
+  },
+
+  /**
+   * Clear all emotes
+   */
+  clearAllEmotes: () => {
+    set({ activeEmotes: {} });
   },
 
   // ==================== AUCTION SYSTEM ====================

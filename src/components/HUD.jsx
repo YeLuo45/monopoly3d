@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useGameStore } from '../game/store';
 import { BOARD_CONFIG } from '../game/boardConfig';
 import { t, getTileName } from '../i18n';
@@ -11,10 +12,10 @@ export default function HUD() {
   const teacherMode = useGameStore(s => s.teacherMode);
   const saveGame = useGameStore(s => s.saveGame);
   const goToMenu = useGameStore(s => s.goToMenu);
-  
+
   const currentPlayer = players[currentPlayerIndex];
   const currentTile = currentPlayer ? BOARD_CONFIG[currentPlayer.position] : null;
-  
+
   return (
     <div className="absolute inset-0 pointer-events-none">
       {/* Top bar - game info */}
@@ -30,7 +31,7 @@ export default function HUD() {
             </div>
           )}
         </div>
-        
+
         <div className="flex items-center gap-2 pointer-events-auto">
           {!teacherMode && (
             <button
@@ -48,7 +49,7 @@ export default function HUD() {
           </button>
         </div>
       </div>
-      
+
       {/* Player panels - left side */}
       <div className="absolute left-3 top-20 flex flex-col gap-2">
         {players.map((player, idx) => (
@@ -84,7 +85,7 @@ export default function HUD() {
           </div>
         ))}
       </div>
-      
+
       {/* Dice display */}
       {diceValues && (
         <div className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-700/80 to-blue-700/80 backdrop-blur-sm rounded-2xl px-8 py-4 flex items-center gap-6 border-2 border-yellow-400/50">
@@ -100,7 +101,7 @@ export default function HUD() {
           </div>
         </div>
       )}
-      
+
       {/* Current tile info */}
       {currentTile && phase !== 'moving' && phase !== 'question' && (
         <div className="absolute bottom-20 right-4 bg-black/60 backdrop-blur-sm rounded-xl px-4 py-3">
@@ -116,6 +117,60 @@ export default function HUD() {
               : currentTile.type === 'chance'
               ? t('hud_chance_tile')
               : currentTile.subtype || currentTile.type}
+          </div>
+        </div>
+      )}
+
+      {/* Emote Picker */}
+      <div className="absolute bottom-20 right-4 pointer-events-auto">
+        <EmotePicker />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * EmotePicker - Quick emote selector for current player
+ */
+function EmotePicker() {
+  const [open, setOpen] = useState(false);
+  const currentPlayerIndex = useGameStore(s => s.currentPlayerIndex);
+  const players = useGameStore(s => s.players);
+  const sendEmote = useGameStore(s => s.sendEmote);
+
+  const currentPlayer = players[currentPlayerIndex];
+  const isHuman = currentPlayer && !currentPlayer.isAI;
+
+  const EMOTES = ['😀', '😎', '😍', '🥳', '😤', '😭', '🤔', '🙄', '😴', '🤝'];
+
+  if (!isHuman) return null;
+
+  const handleEmote = (emote) => {
+    sendEmote(currentPlayer.id, emote, { position: currentPlayer.position });
+    setOpen(false);
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-12 h-12 bg-purple-600 hover:bg-purple-500 rounded-full flex items-center justify-center text-2xl shadow-lg transition-transform hover:scale-110"
+      >
+        😀
+      </button>
+
+      {open && (
+        <div className="absolute bottom-14 right-0 bg-gray-900/95 backdrop-blur-sm rounded-xl p-2 border border-purple-500/50 shadow-2xl">
+          <div className="grid grid-cols-5 gap-1">
+            {EMOTES.map((emote, i) => (
+              <button
+                key={i}
+                onClick={() => handleEmote(emote)}
+                className="w-10 h-10 hover:bg-purple-600 rounded-lg text-xl transition-colors"
+              >
+                {emote}
+              </button>
+            ))}
           </div>
         </div>
       )}

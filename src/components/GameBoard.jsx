@@ -6,6 +6,7 @@ import { BOARD_THEMES } from '../game/themes';
 import Board from './3d/Board';
 import Dice from './3d/Dice';
 import Players from './3d/Players';
+import EmoteLayer from './3d/EmoteBubble';
 import MoveAnimator from './3d/MoveAnimator';
 import HUD from './HUD';
 import QuestionModal from './QuestionModal';
@@ -111,6 +112,7 @@ export default function GameBoard() {
         
         <Board />
         <Players />
+        <EmoteLayer />
         <Dice />
         <MoveAnimator />
         <CameraController />
