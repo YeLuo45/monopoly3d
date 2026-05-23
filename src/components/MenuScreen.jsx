@@ -20,6 +20,7 @@ import CloudSaveManager from '../features/cloud/CloudSaveManager';
 import CreatorDashboard from '../features/workshop/CreatorDashboard';
 import StoryCampaign from '../features/story/StoryCampaign';
 import { LOCALES, getLocale, setLocale, getLocaleName, t } from '../i18n';
+import { FriendPanel } from '../features/friends';
 
 function LanguageSelector() {
   const [open, setOpen] = useState(false);
@@ -100,6 +101,7 @@ export default function MenuScreen() {
   const [showCloudSave, setShowCloudSave] = useState(false);
   const [showCreatorDashboard, setShowCreatorDashboard] = useState(false);
   const [showStoryCampaign, setShowStoryCampaign] = useState(false);
+  const [showFriendPanel, setShowFriendPanel] = useState(false);
 
   useEffect(() => {
     const savedId = loadStudentId();
@@ -626,6 +628,17 @@ export default function MenuScreen() {
                   <div className="text-xs text-yellow-200 opacity-70">{t('shop_desc') || '购买皮肤和道具'}</div>
                 </div>
               </button>
+
+              <button
+                onClick={() => setShowFriendPanel(true)}
+                className="flex items-center gap-4 px-6 py-5 bg-gradient-to-r from-green-600 to-emerald-700 rounded-2xl text-left hover:scale-[1.02] transition-all shadow-lg hover:shadow-green-500/30"
+              >
+                <span className="text-3xl">👥</span>
+                <div>
+                  <div className="text-lg font-bold">{t('friends') || '好友'}</div>
+                  <div className="text-xs text-green-200 opacity-70">{t('friends_desc') || '管理好友和邀请码'}</div>
+                </div>
+              </button>
             </div>
           )}
 
@@ -821,6 +834,9 @@ export default function MenuScreen() {
 
       {/* Story Campaign - only render when panel is open */}
       {showStoryCampaign && <StoryCampaign onClose={() => setShowStoryCampaign(false)} />}
+
+      {/* Friend Panel - only render when panel is open */}
+      {showFriendPanel && <FriendPanel onClose={() => setShowFriendPanel(false)} />}
     </div>
   );
 }
