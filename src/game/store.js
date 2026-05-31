@@ -847,6 +847,16 @@ export const useGameStore = create((set, get) => ({
             const players = [...state.players];
             players[player.id].money -= rentAmount;
             players[player.id].isBankrupt = true;
+            // Publish bankruptcy event
+            eventBus.publish('bankruptcy', {
+              playerId: player.id,
+              playerName: player.name,
+              reason: 'rent_unaffordable',
+              amountOwed: rentAmount,
+              tileId: tile.id,
+              tileName: tile.name,
+              timestamp: Date.now(),
+            });
             // Record rent transactions
             get().recordRentPaid(rentAmount);
             get().recordRentReceived(rentAmount);
@@ -965,6 +975,16 @@ export const useGameStore = create((set, get) => ({
     // If went bankrupt from wrong answer
     if (players[state.currentPlayerIndex].money < 0) {
       players[state.currentPlayerIndex].isBankrupt = true;
+      // Publish bankruptcy event
+      eventBus.publish('bankruptcy', {
+        playerId: state.currentPlayerIndex,
+        playerName: state.players[state.currentPlayerIndex].name,
+        reason: 'wrong_answer',
+        amountOwed: Math.abs(reward),
+        questionId: state.currentQuestion?.id,
+        category: state.currentQuestion?.category,
+        timestamp: Date.now(),
+      });
     }
     
     // Record question stats
@@ -1020,6 +1040,16 @@ export const useGameStore = create((set, get) => ({
     if (tile.type !== TILE_TYPES.PROPERTY || tile.owner !== null) return;
     if (player.money < tile.price) return;
     
+    // Publish property purchase offer event (before purchase attempt)
+    eventBus.publish('property_purchase_offer', {
+      playerId: player.id,
+      playerName: player.name,
+      tileId: tile.id,
+      tileName: tile.name,
+      price: tile.price,
+      timestamp: Date.now(),
+    });
+    
     const players = [...state.players];
     players[state.currentPlayerIndex].money -= tile.price;
     players[state.currentPlayerIndex].properties.push(tile.id);
@@ -1031,7 +1061,17 @@ export const useGameStore = create((set, get) => ({
     // Track achievement
     onPropertyBought(tile.id, tile.price);
     
-    // Publish property purchase event
+    // Publish property purchase complete event (after purchase succeeds)
+    eventBus.publish('property_purchase_complete', {
+      playerId: player.id,
+      playerName: player.name,
+      tileId: tile.id,
+      tileName: tile.name,
+      price: tile.price,
+      timestamp: Date.now(),
+    });
+    
+    // Publish property purchase event (legacy)
     eventBus.publish('property_purchase', {
       playerId: player.id,
       playerName: player.name,
@@ -1076,6 +1116,7 @@ export const useGameStore = create((set, get) => ({
   proposeTrade: (proposal) => {
     const state = get();
     const from = state.currentPlayerIndex;
+    const fromPlayer = state.players[from];
     set({
       tradeProposal: {
         from,
@@ -1087,6 +1128,19 @@ export const useGameStore = create((set, get) => ({
         status: 'pending', // pending | accepted | rejected | counteroffered
       },
       phase: 'trade_proposal',
+    });
+    
+    // Publish trade proposed event
+    eventBus.publish('trade_proposed', {
+      fromPlayerId: from,
+      fromPlayerName: fromPlayer.name,
+      toPlayerId: proposal.to,
+      toPlayerName: state.players[proposal.to]?.name,
+      giveProps: proposal.giveProps || [],
+      receiveProps: proposal.receiveProps || [],
+      giveMoney: proposal.giveMoney || 0,
+      receiveMoney: proposal.receiveMoney || 0,
+      timestamp: Date.now(),
     });
   },
 
@@ -1185,7 +1239,20 @@ export const useGameStore = create((set, get) => ({
       tradeProposal: { ...proposal, status: 'accepted' },
       phase: 'roll',
     });
-
+    
+    // Publish trade accepted event
+    eventBus.publish('trade_accepted', {
+      fromPlayerId: proposal.from,
+      fromPlayerName: fromPlayer.name,
+      toPlayerId: proposal.to,
+      toPlayerName: toPlayer.name,
+      giveProps: proposal.giveProps,
+      receiveProps: proposal.receiveProps,
+      giveMoney: proposal.giveMoney,
+      receiveMoney: proposal.receiveMoney,
+      timestamp: Date.now(),
+    });
+    
     setTimeout(() => set({ tradeProposal: null }), 100);
   },
 
@@ -1195,9 +1262,22 @@ export const useGameStore = create((set, get) => ({
 rejectTrade: () => {
     const state = get();
     if (state.tradeProposal) {
+      const proposal = state.tradeProposal;
+      const fromPlayer = state.players[proposal.from];
+      const toPlayer = state.players[proposal.to];
+      
       set({
         tradeProposal: { ...state.tradeProposal, status: 'rejected' },
         phase: 'roll',
+      });
+      
+      // Publish trade rejected event
+      eventBus.publish('trade_rejected', {
+        fromPlayerId: proposal.from,
+        fromPlayerName: fromPlayer?.name,
+        toPlayerId: proposal.to,
+        toPlayerName: toPlayer?.name,
+        timestamp: Date.now(),
       });
     }
     setTimeout(() => set({ tradeProposal: null }), 100);
@@ -1381,6 +1461,7 @@ rejectTrade: () => {
     const state = get();
     const tile = BOARD_CONFIG[tileId];
     const startingBid = Math.floor(tile.price / 2); // Start at 50% of property price
+    const currentPlayer = state.players[state.currentPlayerIndex];
 
     set({
       activeAuction: {
@@ -1393,6 +1474,16 @@ rejectTrade: () => {
         currentBidderIndex: state.currentPlayerIndex,
       },
       phase: 'auction',
+    });
+    
+    // Publish auction started event
+    eventBus.publish('auction_started', {
+      tileId,
+      tileName: tile.name,
+      startingBid,
+      currentBidderId: currentPlayer.id,
+      currentBidderName: currentPlayer.name,
+      timestamp: Date.now(),
     });
   },
 
@@ -1422,6 +1513,16 @@ rejectTrade: () => {
         biddingHistory: newHistory,
         currentBidderIndex: (auction.currentBidderIndex + 1) % state.players.length,
       },
+    });
+    
+    // Publish auction bid event
+    eventBus.publish('auction_bid', {
+      tileId: auction.tileId,
+      playerId: currentPlayer.id,
+      playerName: currentPlayer.name,
+      bidAmount,
+      previousBid: auction.currentBid,
+      timestamp: Date.now(),
     });
   },
 
@@ -1482,6 +1583,7 @@ rejectTrade: () => {
 
     if (activeBidders.length <= 1) {
       // Auction ends
+      const tile = BOARD_CONFIG[auction.tileId];
       if (auction.highestBidder !== null) {
         // Winner pays and gets property
         const winner = state.players.find(p => p.id === auction.highestBidder);
@@ -1494,8 +1596,30 @@ rejectTrade: () => {
           players,
           activeAuction: { ...auction, status: 'won', winner: winner.id },
         });
+        
+        // Publish auction ended event (won)
+        eventBus.publish('auction_ended', {
+          tileId: auction.tileId,
+          tileName: tile?.name,
+          status: 'won',
+          winnerId: winner.id,
+          winnerName: winner.name,
+          finalBid: auction.currentBid,
+          timestamp: Date.now(),
+        });
       } else {
         set({ activeAuction: { ...auction, status: 'cancelled' } });
+        
+        // Publish auction ended event (cancelled)
+        eventBus.publish('auction_ended', {
+          tileId: auction.tileId,
+          tileName: tile?.name,
+          status: 'cancelled',
+          winnerId: null,
+          winnerName: null,
+          finalBid: auction.currentBid,
+          timestamp: Date.now(),
+        });
       }
       setTimeout(() => set({ activeAuction: null, phase: 'roll' }), 1500);
     }
