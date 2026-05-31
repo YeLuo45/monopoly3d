@@ -3,6 +3,7 @@ import { BOARD_CONFIG, BOARD_SIZE, STARTING_MONEY, MAX_ROUNDS, QUESTION_TILE_IDS
 import { rollDice, getDiceResult } from './dice';
 import { AI_DIFFICULTY, AI_PERSONALITY, getDefaultPersonality, getPersonalityNames, chooseAIAction, getAdaptiveDifficulty } from './aiBrain';
 import { THEMES } from './themes';
+import { eventBus } from './eventBus';
 
 // Achievement System Integration
 import {
@@ -613,6 +614,11 @@ export const useGameStore = create((set, get) => ({
     get().startGameStats();
     // Initialize achievement tracking for new game
     initAchievementTracking();
+    // Publish game start event
+    eventBus.publish('game_start', { 
+      players: players.map(p => ({ id: p.id, name: p.name, isAI: p.isAI })),
+      timestamp: Date.now(),
+    });
     set({
       players,
       pieceSelections: pieceMap,
@@ -643,6 +649,17 @@ export const useGameStore = create((set, get) => ({
       // Track dice for achievement
       onDiceRolled([d1, d2]);
       
+      // Publish dice roll event
+      eventBus.publish('dice_roll', {
+        playerId: currentPlayer.id,
+        playerName: currentPlayer.name,
+        dice: [d1, d2],
+        total: total,
+        isDoubles,
+        consecutiveDoubles: newDoubles,
+        timestamp: Date.now(),
+      });
+      
       // Three doubles = go to jail
       if (newDoubles >= 3) {
         const players = [...state.players];
@@ -650,6 +667,13 @@ export const useGameStore = create((set, get) => ({
         currentPlayer.position = 10; // Jail position
         currentPlayer.inJail = true;
         currentPlayer.jailTurns = 0;
+        // Publish jail enter event
+        eventBus.publish('jail_enter', {
+          playerId: currentPlayer.id,
+          playerName: currentPlayer.name,
+          reason: 'three_doubles',
+          timestamp: Date.now(),
+        });
         set({
           diceRolling: false,
           consecutiveDoubles: 0,
@@ -671,6 +695,13 @@ export const useGameStore = create((set, get) => ({
           players[state.currentPlayerIndex].jailTurns = 0;
           // Track jail escape achievement
           onEscapeJail();
+          // Publish jail exit event (escaped via doubles)
+          eventBus.publish('jail_exit', {
+            playerId: currentPlayer.id,
+            playerName: currentPlayer.name,
+            reason: 'rolled_doubles',
+            timestamp: Date.now(),
+          });
           const newPos = getNextPosition(currentPlayer.position, total);
           set({
             diceRolling: false,
@@ -686,6 +717,13 @@ export const useGameStore = create((set, get) => ({
           if (players[state.currentPlayerIndex].jailTurns >= 3) {
             players[state.currentPlayerIndex].inJail = false;
             players[state.currentPlayerIndex].jailTurns = 0;
+            // Publish jail exit event (forced after 3 turns)
+            eventBus.publish('jail_exit', {
+              playerId: currentPlayer.id,
+              playerName: currentPlayer.name,
+              reason: 'max_turns',
+              timestamp: Date.now(),
+            });
             const newPos = getNextPosition(currentPlayer.position, total);
             set({
               diceRolling: false,
@@ -739,7 +777,19 @@ export const useGameStore = create((set, get) => ({
     
     const nextStep = state.animationStep + 1;
     const players = [...state.players];
+    const previousPosition = state.players[state.currentPlayerIndex].position;
     players[state.currentPlayerIndex].position = state.movingPath[nextStep - 1];
+    
+    // Publish player move event
+    eventBus.publish('player_move', {
+      playerId: state.players[state.currentPlayerIndex].id,
+      playerName: state.players[state.currentPlayerIndex].name,
+      from: previousPosition,
+      to: state.movingPath[nextStep - 1],
+      step: nextStep,
+      totalSteps: state.movingPath.length,
+      timestamp: Date.now(),
+    });
     
     if (nextStep >= state.movingPath.length) {
       // Movement complete - handle tile event
@@ -780,6 +830,17 @@ export const useGameStore = create((set, get) => ({
             if (!owner.isAI) {
               onRentCollected(rentAmount);
             }
+            // Publish rent paid event
+            eventBus.publish('rent_paid', {
+              payerId: player.id,
+              payerName: player.name,
+              receiverId: owner.id,
+              receiverName: owner.name,
+              amount: rentAmount,
+              tileId: tile.id,
+              tileName: tile.name,
+              timestamp: Date.now(),
+            });
             set({ players, phase: 'roll', ...advanceToNextPlayer(state) });
           } else {
             // Bankruptcy
@@ -838,6 +899,13 @@ export const useGameStore = create((set, get) => ({
         players3[state.currentPlayerIndex].position = 10;
         players3[state.currentPlayerIndex].inJail = true;
         players3[state.currentPlayerIndex].jailTurns = 0;
+        // Publish jail enter event
+        eventBus.publish('jail_enter', {
+          playerId: player.id,
+          playerName: player.name,
+          reason: 'go_to_jail_tile',
+          timestamp: Date.now(),
+        });
         set({ players: players3, phase: 'roll', ...advanceToNextPlayer(state) });
         break;
         
@@ -906,6 +974,18 @@ export const useGameStore = create((set, get) => ({
     const answerTime = 15 - state.questionTimer; // Approximate time taken
     onQuestionAnswered(state.currentQuestion.category, isCorrect, answerTime);
     
+    // Publish question answered event
+    eventBus.publish('question_answered', {
+      playerId: state.currentPlayerIndex,
+      playerName: state.players[state.currentPlayerIndex].name,
+      questionId: state.currentQuestion.id,
+      category: state.currentQuestion.category,
+      isCorrect,
+      answerTime,
+      reward,
+      timestamp: Date.now(),
+    });
+    
     set({
       players,
       questionAnswered: isCorrect ? 'correct' : 'incorrect',
@@ -913,8 +993,21 @@ export const useGameStore = create((set, get) => ({
     
     // Auto advance after 2 seconds
     setTimeout(() => {
+      const currentState = get();
+      const previousPlayerIndex = currentState.currentPlayerIndex;
       set({ currentQuestion: null, questionAnswered: null });
-      set({ phase: 'roll', ...advanceToNextPlayer(state) });
+      set({ phase: 'roll', ...advanceToNextPlayer(currentState) });
+      
+      // Publish turn change event
+      eventBus.publish('turn_change', {
+        fromPlayerId: previousPlayerIndex,
+        fromPlayerName: currentState.players[previousPlayerIndex]?.name,
+        toPlayerId: get().currentPlayerIndex,
+        toPlayerName: get().players[get().currentPlayerIndex]?.name,
+        round: get().currentRound,
+        timestamp: Date.now(),
+      });
+      
       get().checkGameOver();
     }, 2000);
   },
@@ -937,6 +1030,26 @@ export const useGameStore = create((set, get) => ({
     
     // Track achievement
     onPropertyBought(tile.id, tile.price);
+    
+    // Publish property purchase event
+    eventBus.publish('property_purchase', {
+      playerId: player.id,
+      playerName: player.name,
+      tileId: tile.id,
+      tileName: tile.name,
+      price: tile.price,
+      timestamp: Date.now(),
+    });
+    
+    // Publish turn change event
+    eventBus.publish('turn_change', {
+      fromPlayerId: state.currentPlayerIndex,
+      fromPlayerName: player.name,
+      toPlayerId: get().currentPlayerIndex,
+      toPlayerName: get().players[get().currentPlayerIndex]?.name,
+      round: get().currentRound,
+      timestamp: Date.now(),
+    });
     
     set({ players, phase: 'roll', ...advanceToNextPlayer(state) });
   },
@@ -1404,6 +1517,17 @@ rejectTrade: () => {
     // Track achievement
     onHouseBuilt();
     
+    // Publish house built event
+    eventBus.publish('house_built', {
+      playerId: player.id,
+      playerName: player.name,
+      tileId: tileId,
+      tileName: tile.name,
+      houses: tile.houses + 1,
+      cost: 50,
+      timestamp: Date.now(),
+    });
+    
     set({ players });
   },
   
@@ -1585,6 +1709,24 @@ toggleTeacherMode: () => set(s => ({ teacherMode: !s.teacherMode })),
       get().finalizeGameStats();
       get().saveGameStatsToProfile();
       get().playerProfile(); // Update profile: XP/level, AI battle record, wrong answers
+      
+      // Publish game end event
+      eventBus.publish('game_end', {
+        winnerId: winner?.id,
+        winnerName: winner?.name,
+        winnerIsAI: winner?.isAI,
+        rank,
+        reason: 'bankruptcy',
+        players: state.players.map(p => ({
+          id: p.id,
+          name: p.name,
+          isAI: p.isAI,
+          netWorth: calculateNetWorth(p),
+        })),
+        totalRounds: state.currentRound,
+        timestamp: Date.now(),
+      });
+      
       set({ winner, phase: 'game_over', screen: 'gameover' });
       return;
     }
@@ -1612,6 +1754,24 @@ toggleTeacherMode: () => set(s => ({ teacherMode: !s.teacherMode })),
       get().finalizeGameStats();
       get().saveGameStatsToProfile();
       get().playerProfile(); // Update profile: XP/level, AI battle record, wrong answers
+      
+      // Publish game end event
+      eventBus.publish('game_end', {
+        winnerId: winner?.id,
+        winnerName: winner?.name,
+        winnerIsAI: winner?.isAI,
+        rank,
+        reason: 'max_rounds',
+        players: state.players.map(p => ({
+          id: p.id,
+          name: p.name,
+          isAI: p.isAI,
+          netWorth: calculateNetWorth(p),
+        })),
+        totalRounds: state.currentRound,
+        timestamp: Date.now(),
+      });
+      
       set({ winner, phase: 'game_over', screen: 'gameover' });
     }
   },
