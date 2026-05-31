@@ -4,6 +4,7 @@ import { rollDice, getDiceResult } from './dice';
 import { AI_DIFFICULTY, AI_PERSONALITY, getDefaultPersonality, getPersonalityNames, chooseAIAction, getAdaptiveDifficulty } from './aiBrain';
 import { THEMES } from './themes';
 import { eventBus } from './eventBus';
+import { GameReplay } from './hooks/gameReplay';
 
 // Achievement System Integration
 import {
@@ -24,6 +25,19 @@ import {
   createAchievementState,
 } from '../features/achievement/achievementIntegration';
 import { useAchievementStore } from '../features/achievement/achievementStore';
+
+// Game Replay System - Auto-record games
+const gameReplay = new GameReplay(eventBus, 1000);
+
+// Auto-start recording on game_start, stop on game_end
+eventBus.subscribe('game_start', (event) => {
+  const gameId = `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  gameReplay.startRecording(gameId);
+});
+
+eventBus.subscribe('game_end', () => {
+  gameReplay.stopRecording();
+});
 
 const PLAYER_COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'];
 const AI_NAMES = ['小智', '小慧', '小能'];
