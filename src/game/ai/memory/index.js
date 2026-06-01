@@ -24,3 +24,8 @@ export { PatternVisualizer } from '../analysis/patternVisualizer.js';
 export { StrategyAdvisor } from '../advisor/strategyAdvisor.js';
 export { StrategyLibrary } from '../advisor/strategyLibrary.js';
 export { createAdvisorData, getPhaseColor, formatConfidence } from '../advisor/advisorUI.js';
+
+// Learning Coach exports
+export { LearningCoach, LESSON_IDS } from '../coach/learningCoach.js';
+export { AdaptiveDifficulty, DIFFICULTY_LEVELS } from '../coach/adaptiveDifficulty.js';
+export { createCoachData, createTipData, createLessonCardData, getEncouragement } from '../coach/coachUI.js';
