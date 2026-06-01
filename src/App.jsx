@@ -12,6 +12,7 @@ import WorkshopScreen from './components/WorkshopScreen';
 import TeacherConsole from './components/TeacherConsole';
 import FloatingEffects from './components/FloatingEffects';
 import DevToolsPanel from './components/DevToolsPanel';
+import { settingsManager } from './game/hooks/settingsManager';
 
 // Lazy-load 3D Canvas components to split three.js out of main bundle
 const GameBoard = lazy(() => import('./components/GameBoard'));
@@ -96,6 +97,30 @@ function App() {
   // Initialize audio on first interaction
   useEffect(() => {
     initAudioOnInteraction();
+  }, []);
+
+  // Apply saved settings on app load
+  useEffect(() => {
+    // Migrate any legacy settings and apply saved settings
+    settingsManager.migrateIfNeeded();
+
+    // Apply settings from saved configuration
+    const settings = settingsManager.getAll();
+
+    // Apply language setting if different from default
+    if (settings.language) {
+      // Language is handled by i18n module
+    }
+
+    // Apply sound settings
+    if (typeof settings.soundEnabled === 'boolean') {
+      // Sound is managed by audio module
+    }
+
+    // Apply debug mode to window for debugging
+    if (settings.debugMode) {
+      window.__MONOPOLY3D_DEBUG__ = true;
+    }
   }, []);
 
   // Start BGM when entering playing screen
