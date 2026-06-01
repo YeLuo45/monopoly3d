@@ -5,6 +5,7 @@ import { AI_DIFFICULTY, AI_PERSONALITY, getDefaultPersonality, getPersonalityNam
 import { THEMES } from './themes';
 import { eventBus } from './eventBus';
 import { GameReplay } from './hooks/gameReplay';
+import { RuleEngine } from './hooks/ruleEngine';
 
 // Achievement System Integration
 import {
@@ -28,6 +29,69 @@ import { useAchievementStore } from '../features/achievement/achievementStore';
 
 // Game Replay System - Auto-record games
 const gameReplay = new GameReplay(eventBus, 1000);
+
+// Rule Engine - Declarative rules for game events
+const ruleEngine = new RuleEngine(eventBus, null);
+
+// Rule Engine game rules - fire game_alert events when triggered
+function setupGameRules() {
+  // Consecutive turns detection - alert when same player takes 3+ consecutive turns
+  ruleEngine.addRule({
+    event: 'turn_change',
+    condition: { playerId: null, threshold: 3 },
+    action: (data) => {
+      eventBus.publish('game_alert', {
+        type: 'consecutive_turns',
+        playerId: data.playerId,
+        message: `玩家 ${data.playerId} 已连续回合过多！`,
+        consecutiveCount: data.consecutiveCount,
+      });
+    },
+    ruleType: 'consecutive_turns',
+    priority: 5,
+  });
+
+  // Rent overload warning - alert when rent > 50% of player money
+  ruleEngine.addRule({
+    event: 'rent_paid',
+    condition: { playerId: null },
+    action: (data) => {
+      const rent = data.amount || 0;
+      const playerMoney = data.playerMoney || 0;
+      if (playerMoney > 0 && rent > playerMoney * 0.5) {
+        eventBus.publish('game_alert', {
+          type: 'rent_overload',
+          playerId: data.playerId,
+          message: `租金警告：${rent}超过玩家资产50%！`,
+          rent,
+          playerMoney,
+        });
+      }
+    },
+    ruleType: 'rent_overload',
+    priority: 5,
+  });
+
+  // Property monopoly alerts - alert when player owns 3+ properties of same color group
+  ruleEngine.addRule({
+    event: 'property_purchase',
+    condition: { playerId: null, threshold: 3 },
+    action: (data) => {
+      // Check if player has a monopoly (all properties of a color group)
+      eventBus.publish('game_alert', {
+        type: 'monopoly_progress',
+        playerId: data.playerId,
+        message: `玩家 ${data.playerId} 房产数量达到 ${data.propertyCount}！`,
+        propertyCount: data.propertyCount,
+      });
+    },
+    ruleType: 'property_threshold',
+    priority: 5,
+  });
+}
+
+// Initialize game rules
+setupGameRules();
 
 // Auto-start recording on game_start, stop on game_end
 eventBus.subscribe('game_start', (event) => {
