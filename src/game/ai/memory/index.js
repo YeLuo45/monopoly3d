@@ -19,3 +19,8 @@ export { GameEmbedding } from '../embedding/gameEmbedding.js';
 export { DecisionPatternAnalyzer } from '../analysis/decisionPatternAnalyzer.js';
 export { BehaviorTree, SelectorNode, SequenceNode, ConditionNode, ActionNode } from '../analysis/behaviorTree.js';
 export { PatternVisualizer } from '../analysis/patternVisualizer.js';
+
+// Strategy Advisor exports
+export { StrategyAdvisor } from '../advisor/strategyAdvisor.js';
+export { StrategyLibrary } from '../advisor/strategyLibrary.js';
+export { createAdvisorData, getPhaseColor, formatConfidence } from '../advisor/advisorUI.js';
