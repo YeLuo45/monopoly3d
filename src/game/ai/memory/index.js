@@ -49,3 +49,8 @@ export { createDashboardData, formatPercent, formatPlacement, formatMoney, creat
 export { TradeEvaluator } from '../trading/tradeEvaluator.js';
 export { FairTradeEngine } from '../trading/fairTradeEngine.js';
 export { TradeHistory } from '../trading/tradeHistory.js';
+
+// Auction System exports
+export { AuctionAI } from './auction/auctionAI.js';
+export { AuctionStrategy } from './auction/auctionStrategy.js';
+export { AuctionAnalyzer } from './auction/auctionAnalyzer.js';
