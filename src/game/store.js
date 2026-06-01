@@ -6,6 +6,7 @@ import { THEMES } from './themes';
 import { eventBus } from './eventBus';
 import { GameReplay } from './hooks/gameReplay';
 import { RuleEngine } from './hooks/ruleEngine';
+import { AIMemoryLayer } from './ai/memoryLayer';
 
 // Achievement System Integration
 import {
@@ -32,6 +33,9 @@ const gameReplay = new GameReplay(eventBus, 1000);
 
 // Rule Engine - Declarative rules for game events
 const ruleEngine = new RuleEngine(eventBus, null);
+
+// AI Memory Layer - Multi-level memory system for game AI
+const aiMemoryLayer = new AIMemoryLayer(eventBus);
 
 // Rule Engine game rules - fire game_alert events when triggered
 function setupGameRules() {
