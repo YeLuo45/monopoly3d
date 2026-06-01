@@ -29,3 +29,8 @@ export { createAdvisorData, getPhaseColor, formatConfidence } from '../advisor/a
 export { LearningCoach, LESSON_IDS } from '../coach/learningCoach.js';
 export { AdaptiveDifficulty, DIFFICULTY_LEVELS } from '../coach/adaptiveDifficulty.js';
 export { createCoachData, createTipData, createLessonCardData, getEncouragement } from '../coach/coachUI.js';
+
+// Opponent Modeling exports
+export { OpponentModel } from '../modeling/opponentModel.js';
+export { ExploitationEngine } from '../modeling/exploitationEngine.js';
+export { OpponentTracker } from '../modeling/opponentTracker.js';
