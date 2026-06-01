@@ -37,6 +37,10 @@ const ruleEngine = new RuleEngine(eventBus, null);
 // AI Memory Layer - Multi-level memory system for game AI
 const aiMemoryLayer = new AIMemoryLayer(eventBus);
 
+// Cross-Game Analytics - Session tracking + cross-game stats
+import { CrossGameAnalytics } from './ai/crossGameAnalytics.js';
+const crossGameAnalytics = new CrossGameAnalytics(aiMemoryLayer);
+
 // Rule Engine game rules - fire game_alert events when triggered
 function setupGameRules() {
   // Consecutive turns detection - alert when same player takes 3+ consecutive turns
@@ -101,10 +105,14 @@ setupGameRules();
 eventBus.subscribe('game_start', (event) => {
   const gameId = `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   gameReplay.startRecording(gameId);
+  // Start cross-game analytics session
+  crossGameAnalytics.startSession(gameId);
 });
 
 eventBus.subscribe('game_end', () => {
   gameReplay.stopRecording();
+  // End cross-game analytics session
+  crossGameAnalytics.endSession();
 });
 
 const PLAYER_COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'];
