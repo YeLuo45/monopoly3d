@@ -59,3 +59,8 @@ export { AuctionAnalyzer } from './auction/auctionAnalyzer.js';
 export { PropertyManagerAI } from './property/propertyManagerAI.js';
 export { RentOptimizer } from './property/rentOptimizer.js';
 export { PropertyValuation } from './property/propertyValuation.js';
+
+// Mortgage Planning System exports
+export { MortgagePlannerAI } from './mortgage/mortgagePlannerAI.js';
+export { CashFlowAnalyzer } from './mortgage/cashFlowAnalyzer.js';
+export { DebtManager } from './mortgage/debtManager.js';
