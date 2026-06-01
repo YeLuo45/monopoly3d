@@ -34,3 +34,8 @@ export { createCoachData, createTipData, createLessonCardData, getEncouragement 
 export { OpponentModel } from '../modeling/opponentModel.js';
 export { ExploitationEngine } from '../modeling/exploitationEngine.js';
 export { OpponentTracker } from '../modeling/opponentTracker.js';
+
+// Strategy Evolution exports
+export { StrategyEvolution } from '../evolution/strategyEvolution.js';
+export { EvolutionConfig } from '../evolution/evolutionConfig.js';
+export { createEvolutionData, createStrategyComparisonData, createFitnessChartData, createMutationTimelineData, formatStrategy, getEvolutionSummary } from '../evolution/evolutionUI.js';
