@@ -44,3 +44,8 @@ export { createEvolutionData, createStrategyComparisonData, createFitnessChartDa
 export { PerformanceDashboard } from './dashboard/performanceDashboard.js';
 export { MetricsAggregator } from './dashboard/metricsAggregator.js';
 export { createDashboardData, formatPercent, formatPlacement, formatMoney, createAchievementCard, createMetricsComparison } from './dashboard/dashboardUI.js';
+
+// Trading System exports
+export { TradeEvaluator } from '../trading/tradeEvaluator.js';
+export { FairTradeEngine } from '../trading/fairTradeEngine.js';
+export { TradeHistory } from '../trading/tradeHistory.js';
