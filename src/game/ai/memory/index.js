@@ -39,3 +39,8 @@ export { OpponentTracker } from '../modeling/opponentTracker.js';
 export { StrategyEvolution } from '../evolution/strategyEvolution.js';
 export { EvolutionConfig } from '../evolution/evolutionConfig.js';
 export { createEvolutionData, createStrategyComparisonData, createFitnessChartData, createMutationTimelineData, formatStrategy, getEvolutionSummary } from '../evolution/evolutionUI.js';
+
+// Performance Dashboard exports
+export { PerformanceDashboard } from './dashboard/performanceDashboard.js';
+export { MetricsAggregator } from './dashboard/metricsAggregator.js';
+export { createDashboardData, formatPercent, formatPlacement, formatMoney, createAchievementCard, createMetricsComparison } from './dashboard/dashboardUI.js';
