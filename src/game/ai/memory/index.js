@@ -14,3 +14,8 @@ export { L4_MetaCognition } from './l4_metaCognition.js';
 export { SituationEncoder } from '../embedding/situationEncoder.js';
 export { EmbeddingIndex } from '../embedding/embeddingIndex.js';
 export { GameEmbedding } from '../embedding/gameEmbedding.js';
+
+// Decision Pattern Analysis exports
+export { DecisionPatternAnalyzer } from '../analysis/decisionPatternAnalyzer.js';
+export { BehaviorTree, SelectorNode, SequenceNode, ConditionNode, ActionNode } from '../analysis/behaviorTree.js';
+export { PatternVisualizer } from '../analysis/patternVisualizer.js';
