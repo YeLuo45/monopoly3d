@@ -54,3 +54,8 @@ export { TradeHistory } from '../trading/tradeHistory.js';
 export { AuctionAI } from './auction/auctionAI.js';
 export { AuctionStrategy } from './auction/auctionStrategy.js';
 export { AuctionAnalyzer } from './auction/auctionAnalyzer.js';
+
+// Property Management AI exports
+export { PropertyManagerAI } from './property/propertyManagerAI.js';
+export { RentOptimizer } from './property/rentOptimizer.js';
+export { PropertyValuation } from './property/propertyValuation.js';
