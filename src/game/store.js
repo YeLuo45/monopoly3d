@@ -7,6 +7,8 @@ import { eventBus } from './eventBus';
 import { GameReplay } from './hooks/gameReplay';
 import { RuleEngine } from './hooks/ruleEngine';
 import { AIMemoryLayer } from './ai/memoryLayer';
+import { CrossSessionReplay } from './hooks/crossSessionReplay.js';
+import { EventSerializer } from './hooks/eventSerializer.js';
 
 // Achievement System Integration
 import {
@@ -40,6 +42,10 @@ const aiMemoryLayer = new AIMemoryLayer(eventBus);
 // Cross-Game Analytics - Session tracking + cross-game stats
 import { CrossGameAnalytics } from './ai/crossGameAnalytics.js';
 const crossGameAnalytics = new CrossGameAnalytics(aiMemoryLayer);
+
+// Cross-Session Replay - Persistent replay recording across browser sessions
+const eventSerializer = new EventSerializer();
+const crossSessionReplay = new CrossSessionReplay(eventBus, eventSerializer, gameReplay);
 
 // Rule Engine game rules - fire game_alert events when triggered
 function setupGameRules() {
@@ -107,12 +113,16 @@ eventBus.subscribe('game_start', (event) => {
   gameReplay.startRecording(gameId);
   // Start cross-game analytics session
   crossGameAnalytics.startSession(gameId);
+  // Create cross-session replay
+  crossSessionReplay.createReplay(gameId);
 });
 
 eventBus.subscribe('game_end', () => {
   gameReplay.stopRecording();
   // End cross-game analytics session
   crossGameAnalytics.endSession();
+  // Auto-save cross-session replay
+  crossSessionReplay.saveReplay(crossSessionReplay.activeReplayId);
 });
 
 const PLAYER_COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'];
