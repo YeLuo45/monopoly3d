@@ -11,6 +11,7 @@ import ProfileScreen from './components/ProfileScreen';
 import WorkshopScreen from './components/WorkshopScreen';
 import TeacherConsole from './components/TeacherConsole';
 import FloatingEffects from './components/FloatingEffects';
+import DevToolsPanel from './components/DevToolsPanel';
 
 // Lazy-load 3D Canvas components to split three.js out of main bundle
 const GameBoard = lazy(() => import('./components/GameBoard'));
@@ -163,6 +164,7 @@ function App() {
       <AchievementPanel />
       <DailyChallengeScreen />
       <LeaderboardPanel />
+      <DevToolsPanel />
     </div>
   );
 }
