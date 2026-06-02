@@ -154,3 +154,8 @@ export { AdaptiveContentMatcher, ContentItem, MATCH_WEIGHTS } from '../segment/a
 export { AchievementManager } from './progression/achievementManager.js';
 export { ProgressionSystem } from './progression/progressionSystem.js';
 export { RewardDistributor } from './progression/rewardDistributor.js';
+
+// Dynamic Difficulty Adjustment System exports
+export { DynamicDifficultyEngine } from './difficulty/dynamicDifficultyEngine.js';
+export { DifficultyScaler } from './difficulty/difficultyScaler.js';
+export { PlayerPerformanceTracker } from './difficulty/playerPerformanceTracker.js';
