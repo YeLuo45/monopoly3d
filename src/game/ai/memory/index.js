@@ -164,3 +164,8 @@ export { PlayerPerformanceTracker } from './difficulty/playerPerformanceTracker.
 export { MultiplayerManager } from './social/multiplayerManager.js';
 export { FriendSystem } from './social/friendSystem.js';
 export { LeaderboardManager } from './social/leaderboardManager.js';
+
+// Cloud Save & Sync System exports
+export { CloudSaveManager, SaveOperation, SyncStatus } from './cloud/cloudSaveManager.js';
+export { DataSyncEngine, SyncState, EntityType } from './cloud/dataSyncEngine.js';
+export { ConflictResolver, ResolutionStrategy, ConflictType } from './cloud/conflictResolver.js';
