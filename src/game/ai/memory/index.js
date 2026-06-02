@@ -109,3 +109,8 @@ export { CapabilityRegistry } from './coordination/capabilityRegistry.js';
 export { TaskQueueManager } from './queue/taskQueueManager.js';
 export { TaskScheduler } from './queue/taskScheduler.js';
 export { WorkloadBalancer } from './queue/workloadBalancer.js';
+
+// Message Bus System exports
+export { MessageBus, messageBus } from './bus/messageBus.js';
+export { ChannelManager } from './bus/channelManager.js';
+export { MessageRouter } from './bus/messageRouter.js';
