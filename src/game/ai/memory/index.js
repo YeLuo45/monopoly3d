@@ -134,3 +134,8 @@ export { HealthChecker } from './monitor/healthChecker.js';
 export { MultiAgentSystemFacade } from './multiAgentSystemFacade.js';
 export { AgentSimulationEngine } from './agentSimulationEngine.js';
 export { SystemDiagnostics } from './systemDiagnostics.js';
+
+// Adaptive Learning & Tutorial System exports
+export { AdaptiveLearningEngine } from './tutor/adaptiveLearningEngine.js';
+export { KnowledgeGraph } from './tutor/knowledgeGraph.js';
+export { TutorialContentManager } from './tutor/tutorialContentManager.js';
