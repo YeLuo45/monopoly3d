@@ -104,3 +104,8 @@ export { EconomicDashboardData } from '../economicDashboardData.js';
 export { AgentCoordinator, AgentType } from './coordination/agentCoordinator.js';
 export { TaskDispatcher, TaskPriority, TaskStatus } from './coordination/taskDispatcher.js';
 export { CapabilityRegistry } from './coordination/capabilityRegistry.js';
+
+// Task Queue Manager System exports
+export { TaskQueueManager } from './queue/taskQueueManager.js';
+export { TaskScheduler } from './queue/taskScheduler.js';
+export { WorkloadBalancer } from './queue/workloadBalancer.js';
