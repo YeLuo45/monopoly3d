@@ -124,3 +124,8 @@ export { ConsensusBuilder } from './blackboard/consensusBuilder.js';
 export { OrchestrationEngine, WorkflowState, StepType, createStep } from './orchestrate/orchestrationEngine.js';
 export { WorkflowBuilder } from './orchestrate/workflowBuilder.js';
 export { StepExecutor, StepStatus, createRetryableStep, createRollbackableStep } from './orchestrate/stepExecutor.js';
+
+// Performance Monitoring System exports
+export { PerformanceMonitor } from './monitor/performanceMonitor.js';
+export { ResourceTracker } from './monitor/resourceTracker.js';
+export { HealthChecker } from './monitor/healthChecker.js';
