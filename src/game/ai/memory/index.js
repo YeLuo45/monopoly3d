@@ -139,3 +139,8 @@ export { SystemDiagnostics } from './systemDiagnostics.js';
 export { AdaptiveLearningEngine } from './tutor/adaptiveLearningEngine.js';
 export { KnowledgeGraph } from './tutor/knowledgeGraph.js';
 export { TutorialContentManager } from './tutor/tutorialContentManager.js';
+
+// Procedural Content Generation System exports
+export { ProceduralGenerator } from './procgen/proceduralGenerator.js';
+export { ContentTemplateLibrary } from './procgen/contentTemplateLibrary.js';
+export { BalancedContentGenerator } from './procgen/balancedContentGenerator.js';
