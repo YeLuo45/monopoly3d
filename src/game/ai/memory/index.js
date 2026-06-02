@@ -84,3 +84,8 @@ export { InvestmentScreener } from './invest/investmentScreener.js';
 export { MarketSimulator } from './econ/marketSimulator.js';
 export { EconomicIndicator } from './econ/economicIndicator.js';
 export { PriceEngine } from './econ/priceEngine.js';
+
+// Tax Planning AI System exports
+export { TaxPlanningAI } from './tax/taxPlanningAI.js';
+export { TaxCalculator } from './tax/taxCalculator.js';
+export { TaxCompliance } from './tax/taxCompliance.js';
