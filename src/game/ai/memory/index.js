@@ -169,3 +169,8 @@ export { LeaderboardManager } from './social/leaderboardManager.js';
 export { CloudSaveManager, SaveOperation, SyncStatus } from './cloud/cloudSaveManager.js';
 export { DataSyncEngine, SyncState, EntityType } from './cloud/dataSyncEngine.js';
 export { ConflictResolver, ResolutionStrategy, ConflictType } from './cloud/conflictResolver.js';
+
+// Adaptive Gaming System exports (Direction E v9)
+export { AdaptiveGamingFacade } from './adaptive/adaptiveGamingFacade.js';
+export { GameStateAdaptor } from './adaptive/gameStateAdaptor.js';
+export { AdaptiveAnalytics } from './adaptive/adaptiveAnalytics.js';
