@@ -69,3 +69,8 @@ export { DebtManager } from './mortgage/debtManager.js';
 export { MoneyManagerAI } from './finance/moneyManagerAI.js';
 export { FinancialTracker } from './finance/financialTracker.js';
 export { BudgetOptimizer } from './finance/budgetOptimizer.js';
+
+// Banking AI System exports
+export { BankingAI } from './bank/bankingAI.js';
+export { LoanManager } from './bank/loanManager.js';
+export { InterestCalculator } from './bank/interestCalculator.js';
