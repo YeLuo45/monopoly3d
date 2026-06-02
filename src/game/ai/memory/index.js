@@ -79,3 +79,8 @@ export { InterestCalculator } from './bank/interestCalculator.js';
 export { InvestmentAdvisorAI } from './invest/investmentAdvisorAI.js';
 export { PortfolioBuilder } from './invest/portfolioBuilder.js';
 export { InvestmentScreener } from './invest/investmentScreener.js';
+
+// Economic Simulation System exports
+export { MarketSimulator } from './econ/marketSimulator.js';
+export { EconomicIndicator } from './econ/economicIndicator.js';
+export { PriceEngine } from './econ/priceEngine.js';
