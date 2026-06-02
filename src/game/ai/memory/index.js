@@ -119,3 +119,8 @@ export { MessageRouter } from './bus/messageRouter.js';
 export { BlackboardStore } from './blackboard/blackboardStore.js';
 export { KnowledgeSource } from './blackboard/knowledgeSource.js';
 export { ConsensusBuilder } from './blackboard/consensusBuilder.js';
+
+// Orchestration System exports
+export { OrchestrationEngine, WorkflowState, StepType, createStep } from './orchestrate/orchestrationEngine.js';
+export { WorkflowBuilder } from './orchestrate/workflowBuilder.js';
+export { StepExecutor, StepStatus, createRetryableStep, createRollbackableStep } from './orchestrate/stepExecutor.js';
