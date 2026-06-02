@@ -74,3 +74,8 @@ export { BudgetOptimizer } from './finance/budgetOptimizer.js';
 export { BankingAI } from './bank/bankingAI.js';
 export { LoanManager } from './bank/loanManager.js';
 export { InterestCalculator } from './bank/interestCalculator.js';
+
+// Investment Advisor System exports
+export { InvestmentAdvisorAI } from './invest/investmentAdvisorAI.js';
+export { PortfolioBuilder } from './invest/portfolioBuilder.js';
+export { InvestmentScreener } from './invest/investmentScreener.js';
