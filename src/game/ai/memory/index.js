@@ -159,3 +159,8 @@ export { RewardDistributor } from './progression/rewardDistributor.js';
 export { DynamicDifficultyEngine } from './difficulty/dynamicDifficultyEngine.js';
 export { DifficultyScaler } from './difficulty/difficultyScaler.js';
 export { PlayerPerformanceTracker } from './difficulty/playerPerformanceTracker.js';
+
+// Social Features & Multiplayer System exports
+export { MultiplayerManager } from './social/multiplayerManager.js';
+export { FriendSystem } from './social/friendSystem.js';
+export { LeaderboardManager } from './social/leaderboardManager.js';
