@@ -129,3 +129,8 @@ export { StepExecutor, StepStatus, createRetryableStep, createRollbackableStep }
 export { PerformanceMonitor } from './monitor/performanceMonitor.js';
 export { ResourceTracker } from './monitor/resourceTracker.js';
 export { HealthChecker } from './monitor/healthChecker.js';
+
+// Multi-Agent System Integration exports
+export { MultiAgentSystemFacade } from './multiAgentSystemFacade.js';
+export { AgentSimulationEngine } from './agentSimulationEngine.js';
+export { SystemDiagnostics } from './systemDiagnostics.js';
