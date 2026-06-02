@@ -144,3 +144,8 @@ export { TutorialContentManager } from './tutor/tutorialContentManager.js';
 export { ProceduralGenerator } from './procgen/proceduralGenerator.js';
 export { ContentTemplateLibrary } from './procgen/contentTemplateLibrary.js';
 export { BalancedContentGenerator } from './procgen/balancedContentGenerator.js';
+
+// Player Segmentation & Personalization System exports
+export { PlayerSegmentor, PlayerMetrics, SEGMENT_TYPES, SEGMENT_WEIGHTS, SEGMENT_THRESHOLDS } from '../segment/playerSegmentor.js';
+export { PersonalizationEngine, CONTENT_TYPES, PREFERENCE_TYPES, DEFAULT_PREFERENCES, SEGMENT_PREFERENCE_BASE } from '../segment/personalizationEngine.js';
+export { AdaptiveContentMatcher, ContentItem, MATCH_WEIGHTS } from '../segment/adaptiveContentMatcher.js';
