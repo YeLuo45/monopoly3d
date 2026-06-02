@@ -94,3 +94,8 @@ export { TaxCompliance } from './tax/taxCompliance.js';
 export { WinningPredictorAI } from '../predict/winningPredictorAI.js';
 export { GameStateEvaluator } from '../predict/gameStateEvaluator.js';
 export { PerformanceTracker } from '../predict/performanceTracker.js';
+
+// Economic System Facade exports
+export { EconomicSystemFacade } from '../economicSystemFacade.js';
+export { EconomicCoordinationHub } from '../economicCoordinationHub.js';
+export { EconomicDashboardData } from '../economicDashboardData.js';
