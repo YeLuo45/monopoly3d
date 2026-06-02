@@ -114,3 +114,8 @@ export { WorkloadBalancer } from './queue/workloadBalancer.js';
 export { MessageBus, messageBus } from './bus/messageBus.js';
 export { ChannelManager } from './bus/channelManager.js';
 export { MessageRouter } from './bus/messageRouter.js';
+
+// Blackboard System exports
+export { BlackboardStore } from './blackboard/blackboardStore.js';
+export { KnowledgeSource } from './blackboard/knowledgeSource.js';
+export { ConsensusBuilder } from './blackboard/consensusBuilder.js';
