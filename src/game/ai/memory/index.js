@@ -64,3 +64,8 @@ export { PropertyValuation } from './property/propertyValuation.js';
 export { MortgagePlannerAI } from './mortgage/mortgagePlannerAI.js';
 export { CashFlowAnalyzer } from './mortgage/cashFlowAnalyzer.js';
 export { DebtManager } from './mortgage/debtManager.js';
+
+// Finance / Money Management System exports
+export { MoneyManagerAI } from './finance/moneyManagerAI.js';
+export { FinancialTracker } from './finance/financialTracker.js';
+export { BudgetOptimizer } from './finance/budgetOptimizer.js';
