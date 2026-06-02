@@ -89,3 +89,8 @@ export { PriceEngine } from './econ/priceEngine.js';
 export { TaxPlanningAI } from './tax/taxPlanningAI.js';
 export { TaxCalculator } from './tax/taxCalculator.js';
 export { TaxCompliance } from './tax/taxCompliance.js';
+
+// Winning Predictor System exports
+export { WinningPredictorAI } from '../predict/winningPredictorAI.js';
+export { GameStateEvaluator } from '../predict/gameStateEvaluator.js';
+export { PerformanceTracker } from '../predict/performanceTracker.js';
