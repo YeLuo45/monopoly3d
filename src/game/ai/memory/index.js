@@ -99,3 +99,8 @@ export { PerformanceTracker } from '../predict/performanceTracker.js';
 export { EconomicSystemFacade } from '../economicSystemFacade.js';
 export { EconomicCoordinationHub } from '../economicCoordinationHub.js';
 export { EconomicDashboardData } from '../economicDashboardData.js';
+
+// Multi-Agent Coordination System exports
+export { AgentCoordinator, AgentType } from './coordination/agentCoordinator.js';
+export { TaskDispatcher, TaskPriority, TaskStatus } from './coordination/taskDispatcher.js';
+export { CapabilityRegistry } from './coordination/capabilityRegistry.js';
