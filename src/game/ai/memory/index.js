@@ -149,3 +149,8 @@ export { BalancedContentGenerator } from './procgen/balancedContentGenerator.js'
 export { PlayerSegmentor, PlayerMetrics, SEGMENT_TYPES, SEGMENT_WEIGHTS, SEGMENT_THRESHOLDS } from '../segment/playerSegmentor.js';
 export { PersonalizationEngine, CONTENT_TYPES, PREFERENCE_TYPES, DEFAULT_PREFERENCES, SEGMENT_PREFERENCE_BASE } from '../segment/personalizationEngine.js';
 export { AdaptiveContentMatcher, ContentItem, MATCH_WEIGHTS } from '../segment/adaptiveContentMatcher.js';
+
+// Achievement & Progression System exports
+export { AchievementManager } from './progression/achievementManager.js';
+export { ProgressionSystem } from './progression/progressionSystem.js';
+export { RewardDistributor } from './progression/rewardDistributor.js';
